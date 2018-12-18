@@ -15,6 +15,7 @@
 #include <julea.h>
 #include <julea-kv.h>
 #include <julea-object.h>
+#include <julea-internal.h>
 #include <glib.h>
 #include <bson.h>
 
@@ -211,6 +212,8 @@ j_hdf5_serialize (bson_oid_t* id, char *name, const void *data, size_t data_size
 {
 	bson_t* b;
 
+	j_trace_enter(G_STRFUNC, NULL);
+
 	b = bson_new();
 	bson_init(b);
 
@@ -218,6 +221,8 @@ j_hdf5_serialize (bson_oid_t* id, char *name, const void *data, size_t data_size
 	bson_append_utf8(b, "name", -1, name, -1);
 	bson_append_binary(b, "data", -1, BSON_SUBTYPE_BINARY, data, data_size);
 	bson_append_int32(b, "size", -1, (int32_t)data_size);
+
+	j_trace_leave(G_STRFUNC);
 
 	return b;
 }
