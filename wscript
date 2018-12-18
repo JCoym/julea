@@ -400,12 +400,16 @@ def build (ctx):
 		install_path = '${LIBDIR}'
 	)
 
-	clients = ['object', 'kv', 'item']
+	clients = ['object', 'kv', 'item', 'hdf5']
 
 	for client in clients:
 		use_extra = []
 
 		if client == 'item':
+			use_extra.append('lib/julea-kv')
+			use_extra.append('lib/julea-object')
+		if client == 'hdf5':
+			use_extra.append('HDF5')
 			use_extra.append('lib/julea-kv')
 			use_extra.append('lib/julea-object')
 
@@ -423,7 +427,7 @@ def build (ctx):
 	ctx.program(
 		source = ctx.path.ant_glob('test/**/*.c'),
 		target = 'test/julea-test',
-		use = use_julea_core + ['lib/julea', 'lib/julea-item'],
+		use = use_julea_core + ['lib/julea', 'lib/julea-item', 'HDF5', 'lib/julea-hdf5'],
 		includes = ['include', 'test'],
 		rpath = get_rpath(ctx),
 		install_path = None

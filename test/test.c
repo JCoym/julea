@@ -49,6 +49,8 @@ main (int argc, char** argv)
 	test_item();
 	test_uri();
 
+	test_hdf();
+
 	ret = g_test_run();
 
 	return ret;

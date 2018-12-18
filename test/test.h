@@ -35,4 +35,6 @@ void test_collection (void);
 void test_item (void);
 void test_uri (void);
 
+void test_hdf (void);
+
 #endif
