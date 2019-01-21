@@ -59,17 +59,17 @@ char *j_hdf5_encode_type(const char *, hid_t *, hid_t, size_t *);
 
 char *j_hdf5_encode_space(const char *, hid_t *, hid_t, size_t *);
 
-bson_t *j_hdf5_serialize(bson_oid_t *, char *, const void *, size_t);
+bson_t *j_hdf5_serialize(char *, const void *, size_t);
 
-bson_t *j_hdf5_serialize_size(bson_oid_t *, char *, size_t);
+bson_t *j_hdf5_serialize_size(char *, size_t);
 
-bson_t *j_hdf5_serialize_distribution(bson_oid_t *, JDistribution *);
+bson_t *j_hdf5_serialize_distribution(JDistribution *);
 
 void j_hdf5_deserialize(const bson_t *, void *, size_t);
 
 void j_hdf5_deserialize_distribution(const bson_t *, SQD_t *);
 
-void j_hdf5_deserialize_meta(const bson_t *, const bson_oid_t *, size_t *);
+void j_hdf5_deserialize_meta(const bson_t *, size_t *);
 
 char *create_path(const char *, char *);
 
