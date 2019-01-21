@@ -67,7 +67,7 @@ bson_t *j_hdf5_serialize_distribution(JDistribution *);
 
 void j_hdf5_deserialize(const bson_t *, void *, size_t);
 
-void j_hdf5_deserialize_distribution(const bson_t *, SQD_t *);
+void j_hdf5_deserialize_distribution(const bson_t *, JHD_t *);
 
 void j_hdf5_deserialize_meta(const bson_t *, size_t *);
 
