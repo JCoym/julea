@@ -209,6 +209,8 @@ main (int argc, char** argv)
 	benchmark_collection();
 	benchmark_item();
 
+	benchmark_hdf();
+
 	g_timer_destroy(j_benchmark_timer);
 	j_semantics_unref(j_benchmark_semantics);
 
