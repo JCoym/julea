@@ -122,10 +122,10 @@ static void benchmark_hdf_write(BenchmarkResult* result) {
 	//    len = H5VLget_plugin_name(file, name, 25);
 	//    printf ("FILE VOL name = %s  %d\n", name, len);
 
-  for (int i = 0; i < 10; i++)
+  for (int i = 0; i < 10000; i++)
   {
-    char name[11];
-    snprintf(name, sizeof name, "IntArray%02d", i);
+    char name[14];
+    snprintf(name, sizeof name, "IntArray%05d", i);
     create_random_dataset(fid, name);
   }
 
@@ -141,7 +141,7 @@ static void benchmark_hdf_write(BenchmarkResult* result) {
 	H5VLunregister (vol_id);
 
   result->elapsed_time = elapsed;
-	result->operations = 10;
+	result->operations = 10000;
 
 	g_assert(H5VLis_registered("extlog") == 0);
 }
@@ -182,10 +182,10 @@ static void benchmark_hdf_write_stock(BenchmarkResult* result) {
 	//    len = H5VLget_plugin_name(file, name, 25);
 	//    printf ("FILE VOL name = %s  %d\n", name, len);
 
-  for (int i = 0; i < 10; i++)
+  for (int i = 0; i < 10000; i++)
   {
-    char name[11];
-    snprintf(name, sizeof name, "IntArray%02d", i);
+    char name[14];
+    snprintf(name, sizeof name, "IntArray%05d", i);
     create_random_dataset(fid, name);
   }
 
@@ -201,7 +201,7 @@ static void benchmark_hdf_write_stock(BenchmarkResult* result) {
 	//H5VLunregister (vol_id);
 
 	result->elapsed_time = elapsed;
-	result->operations = 10;
+	result->operations = 10000;
 
 	//g_assert(H5VLis_registered("extlog") == 0);
 }
@@ -268,10 +268,10 @@ static void benchmark_hdf_read(BenchmarkResult* result) {
     //len = H5VLget_plugin_name(file, name, 25);
     //printf ("FILE VOL name = %s  %d\n", name, len);
 
-  for (int z=0; z < 10; z++)
+  for (int z=0; z < 10000; z++)
   {
-    char name[11];
-    snprintf(name, sizeof name, "IntArray%02d", z);
+    char name[14];
+    snprintf(name, sizeof name, "IntArray%05d", z);
   /* Open the dataset */
     dataset = H5Dopen2(file, name, H5P_DEFAULT);
   /* Testing "open"-function: Open attribute using its name, then display attribute name*/
@@ -287,31 +287,31 @@ static void benchmark_hdf_read(BenchmarkResult* result) {
 
    /* Display datatype for attribute */
    if (H5T_FLOAT == H5Tget_class(atype)) {
-        printf("DATATYPE : H5T_FLOAT \n");}
+        }//printf("DATATYPE : H5T_FLOAT \n");}
    if (H5T_INTEGER == H5Tget_class(atype)) {
-        printf("DATATYPE : H5T_INTEGER \n");}
+        }//printf("DATATYPE : H5T_INTEGER \n");}
    if (H5T_STRING == H5Tget_class(atype)) {
-        printf("DATATYPE : H5T_STRING \n");}
+        }//printf("DATATYPE : H5T_STRING \n");}
    if (H5T_BITFIELD == H5Tget_class(atype)) {
-        printf("DATATYPE : H5T_BITFIELD \n");}
+        }//printf("DATATYPE : H5T_BITFIELD \n");}
    if (H5T_OPAQUE == H5Tget_class(atype)) {
-        printf("DATATYPE : H5T_OPAQUE \n");}
+        }//printf("DATATYPE : H5T_OPAQUE \n");}
    if (H5T_COMPOUND == H5Tget_class(atype)) {
-        printf("DATATYPE : H5T_COMPOUND \n");}
+        }//printf("DATATYPE : H5T_COMPOUND \n");}
    if (H5T_REFERENCE == H5Tget_class(atype)) {
-        printf("DATATYPE : H5T_REFERENCE \n");}
+        }//printf("DATATYPE : H5T_REFERENCE \n");}
    if (H5T_ENUM == H5Tget_class(atype)) {
-        printf("DATATYPE : H5T_ENUM \n");}
+        }//printf("DATATYPE : H5T_ENUM \n");}
    if (H5T_VLEN == H5Tget_class(atype)) {
-        printf("DATATYPE : H5T_VLEN \n");}
+        }//printf("DATATYPE : H5T_VLEN \n");}
    if (H5T_ARRAY == H5Tget_class(atype)) {
-        printf("DATATYPE : H5T_ARRAY \n");}
+        }//printf("DATATYPE : H5T_ARRAY \n");}
 
    /* Display dataspace for attribute */
    if (H5Sis_simple(aspace))
-       { printf("DATASPACE : SIMPLE \n");}
+       { }//printf("DATASPACE : SIMPLE \n");}
    else
-       { printf("DATASPACE : SCALAR \n");}
+       { }//printf("DATASPACE : SCALAR \n");}
 
 
 
@@ -322,9 +322,9 @@ static void benchmark_hdf_read(BenchmarkResult* result) {
      {
         //printf("Rank : %d \n", rank);
         //printf("Dimension sizes : ");
-        for (int i=0; i< rank; i++)
+        /*for (int i=0; i< rank; i++)
             printf("%d ", (int)sdim[i]);
-        printf("\n");
+        printf("\n");*/
      }
 
 
@@ -333,10 +333,10 @@ static void benchmark_hdf_read(BenchmarkResult* result) {
    data_out = (int *) malloc(sizeof(int) * (int) npoints);
 
    status  = H5Aread(attr, H5T_NATIVE_INT, data_out);
-   printf("The value of the attribute is : ");
+   /*printf("The value of the attribute is : ");
 	 for (size_t i = 0; i < npoints; i++)
 		 printf(" %d ", data_out[i]);
-	 printf("\n");
+	 printf("\n");*/
    free(data_out);
 
 	// EB: dieser code muss korrekt die Daten auslesen
@@ -348,10 +348,10 @@ static void benchmark_hdf_read(BenchmarkResult* result) {
 	H5Dread(dataset, mem_type_id, mem_space_id, H5S_ALL, H5P_DEFAULT, buf);
 
 	test_data = (int*) buf;
-	for (hssize_t i = 0; i < n_data_points; ++i) {
+	/*for (hssize_t i = 0; i < n_data_points; ++i) {
 		printf("%d ", test_data[i]);
 	}
-  printf("\n");
+  printf("\n");*/
 	free(buf);
 	// END: EB
 
@@ -371,7 +371,7 @@ static void benchmark_hdf_read(BenchmarkResult* result) {
     status = H5VLunregister (vol_id);
 
 	  result->elapsed_time = elapsed;
-  	result->operations = 10;
+  	result->operations = 10000;
 
     g_assert(H5VLis_registered("extlog") == 0);
 }
@@ -438,10 +438,10 @@ static void benchmark_hdf_read_stock(BenchmarkResult* result) {
     //len = H5VLget_plugin_name(file, name, 25);
     //printf ("FILE VOL name = %s  %d\n", name, len);
 
-  for (int z=0; z < 10; z++)
+  for (int z=0; z < 10000; z++)
   {
-    char name[11];
-    snprintf(name, sizeof name, "IntArray%02d", z);
+    char name[14];
+    snprintf(name, sizeof name, "IntArray%05d", z);
   /* Open the dataset */
     dataset = H5Dopen2(file, name, H5P_DEFAULT);
   /* Testing "open"-function: Open attribute using its name, then display attribute name*/
@@ -457,31 +457,31 @@ static void benchmark_hdf_read_stock(BenchmarkResult* result) {
 
    /* Display datatype for attribute */
    if (H5T_FLOAT == H5Tget_class(atype)) {
-        printf("DATATYPE : H5T_FLOAT \n");}
+        }//printf("DATATYPE : H5T_FLOAT \n");}
    if (H5T_INTEGER == H5Tget_class(atype)) {
-        printf("DATATYPE : H5T_INTEGER \n");}
+        }//printf("DATATYPE : H5T_INTEGER \n");}
    if (H5T_STRING == H5Tget_class(atype)) {
-        printf("DATATYPE : H5T_STRING \n");}
+        }//printf("DATATYPE : H5T_STRING \n");}
    if (H5T_BITFIELD == H5Tget_class(atype)) {
-        printf("DATATYPE : H5T_BITFIELD \n");}
+        }//printf("DATATYPE : H5T_BITFIELD \n");}
    if (H5T_OPAQUE == H5Tget_class(atype)) {
-        printf("DATATYPE : H5T_OPAQUE \n");}
+        }//printf("DATATYPE : H5T_OPAQUE \n");}
    if (H5T_COMPOUND == H5Tget_class(atype)) {
-        printf("DATATYPE : H5T_COMPOUND \n");}
+        }//printf("DATATYPE : H5T_COMPOUND \n");}
    if (H5T_REFERENCE == H5Tget_class(atype)) {
-        printf("DATATYPE : H5T_REFERENCE \n");}
+        }//printf("DATATYPE : H5T_REFERENCE \n");}
    if (H5T_ENUM == H5Tget_class(atype)) {
-        printf("DATATYPE : H5T_ENUM \n");}
+        }//printf("DATATYPE : H5T_ENUM \n");}
    if (H5T_VLEN == H5Tget_class(atype)) {
-        printf("DATATYPE : H5T_VLEN \n");}
+        }//printf("DATATYPE : H5T_VLEN \n");}
    if (H5T_ARRAY == H5Tget_class(atype)) {
-        printf("DATATYPE : H5T_ARRAY \n");}
+        }//printf("DATATYPE : H5T_ARRAY \n");}
 
    /* Display dataspace for attribute */
    if (H5Sis_simple(aspace))
-       { printf("DATASPACE : SIMPLE \n");}
+       { }//printf("DATASPACE : SIMPLE \n");}
    else
-       { printf("DATASPACE : SCALAR \n");}
+       { }//printf("DATASPACE : SCALAR \n");}
 
 
 
@@ -492,9 +492,9 @@ static void benchmark_hdf_read_stock(BenchmarkResult* result) {
      {
         //printf("Rank : %d \n", rank);
         //printf("Dimension sizes : ");
-        for (int i=0; i< rank; i++)
+        /*for (int i=0; i< rank; i++)
             printf("%d ", (int)sdim[i]);
-        printf("\n");
+        printf("\n");*/
      }
 
 
@@ -503,10 +503,10 @@ static void benchmark_hdf_read_stock(BenchmarkResult* result) {
    data_out = (int *) malloc(sizeof(int) * (int) npoints);
 
    status  = H5Aread(attr, H5T_NATIVE_INT, data_out);
-   printf("The value of the attribute is : ");
+   /*printf("The value of the attribute is : ");
 	 for (size_t i = 0; i < npoints; i++)
 		 printf(" %d ", data_out[i]);
-	 printf("\n");
+	 printf("\n");*/
    free(data_out);
 
 	// EB: dieser code muss korrekt die Daten auslesen
@@ -518,10 +518,10 @@ static void benchmark_hdf_read_stock(BenchmarkResult* result) {
 	H5Dread(dataset, mem_type_id, mem_space_id, H5S_ALL, H5P_DEFAULT, buf);
 
 	test_data = (int*) buf;
-	for (hssize_t i = 0; i < n_data_points; ++i) {
+	/*for (hssize_t i = 0; i < n_data_points; ++i) {
 		printf("%d ", test_data[i]);
 	}
-  printf("\n");
+  printf("\n");*/
 	free(buf);
 	// END: EB
 
@@ -541,7 +541,7 @@ static void benchmark_hdf_read_stock(BenchmarkResult* result) {
     //status = H5VLunregister (vol_id);
 
 	  result->elapsed_time = elapsed;
-  	result->operations = 10;
+  	result->operations = 10000;
 
     g_assert(H5VLis_registered("extlog") == 0);
 }
