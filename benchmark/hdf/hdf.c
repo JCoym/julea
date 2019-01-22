@@ -119,10 +119,10 @@ static void benchmark_hdf_write(void) {
 	//    len = H5VLget_plugin_name(file, name, 25);
 	//    printf ("FILE VOL name = %s  %d\n", name, len);
 
-  for (int i = 0, i < 10, i++)
+  for (int i = 0; i < 10; i++)
   {
     char name[11];
-    sprintf(name, sizeof name, "IntArray%02d", i);
+    snprintf(name, sizeof name, "IntArray%02d", i);
     create_random_dataset(fid, name);
   }
 
@@ -174,7 +174,7 @@ static void benchmark_hdf_write_stock(void) {
   for (int i = 0; i < 10; i++)
   {
     char name[11];
-    sprintf(name, sizeof name, "IntArray%02d", i);
+    snprintf(name, sizeof name, "IntArray%02d", i);
     create_random_dataset(fid, name);
   }
 
@@ -252,7 +252,7 @@ static void benchmark_hdf_read(void) {
   for (int z=0; z < 10; z++)
   {
     char name[11];
-    sprintf(name, sizeof name, "IntArray%02d", i);
+    snprintf(name, sizeof name, "IntArray%02d", z);
   /* Open the dataset */
     dataset = H5Dopen2(file, name, H5P_DEFAULT);
   /* Testing "open"-function: Open attribute using its name, then display attribute name*/
@@ -413,10 +413,10 @@ static void benchmark_hdf_read_stock(void) {
     //len = H5VLget_plugin_name(file, name, 25);
     //printf ("FILE VOL name = %s  %d\n", name, len);
 
-  for (int z=0, z < 10, z++)
+  for (int z=0; z < 10; z++)
   {
     char name[11];
-    sprintf(name, sizeof name, "IntArray%02d", i);
+    snprintf(name, sizeof name, "IntArray%02d", z);
   /* Open the dataset */
     dataset = H5Dopen2(file, name, H5P_DEFAULT);
   /* Testing "open"-function: Open attribute using its name, then display attribute name*/
