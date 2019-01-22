@@ -437,7 +437,7 @@ def build (ctx):
 	ctx.program(
 		source = ctx.path.ant_glob('benchmark/**/*.c'),
 		target = 'benchmark/julea-benchmark',
-		use = use_julea_core + ['lib/julea', 'lib/julea-item'],
+		use = use_julea_core + ['lib/julea', 'lib/julea-item', 'HDF5', 'lib/julea-hdf5'],
 		includes = ['include', 'benchmark'],
 		rpath = get_rpath(ctx),
 		install_path = None
