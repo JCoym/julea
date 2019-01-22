@@ -171,7 +171,7 @@ static void benchmark_hdf_write_stock(void) {
 	//    len = H5VLget_plugin_name(file, name, 25);
 	//    printf ("FILE VOL name = %s  %d\n", name, len);
 
-  for (int i = 0, i < 10, i++)
+  for (int i = 0; i < 10; i++)
   {
     char name[11];
     sprintf(name, sizeof name, "IntArray%02d", i);
@@ -249,7 +249,7 @@ static void benchmark_hdf_read(void) {
     //len = H5VLget_plugin_name(file, name, 25);
     //printf ("FILE VOL name = %s  %d\n", name, len);
 
-  for (int z=0, z < 10, z++)
+  for (int z=0; z < 10; z++)
   {
     char name[11];
     sprintf(name, sizeof name, "IntArray%02d", i);
