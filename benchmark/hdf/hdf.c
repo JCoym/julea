@@ -86,7 +86,7 @@ static void create_random_dataset(hid_t location, const char* name) {
 	H5Dclose(dataset);
 }
 
-static void benchmark_hdf_write(void) {
+static void benchmark_hdf_write(BenchmarkResult* result) {
   hid_t fid;
 	hid_t under_fapl;
 	hid_t acc_tpl;
@@ -94,6 +94,7 @@ static void benchmark_hdf_write(void) {
 	//hid_t status;
   const H5VL_class_t* h5vl_log;
 	hid_t native_plugin_id;
+  gdouble elapsed;
 
 	/* set native VOL plugin */
 	under_fapl = H5Pcreate (H5P_FILE_ACCESS);
@@ -112,6 +113,8 @@ static void benchmark_hdf_write(void) {
 	acc_tpl = H5Pcreate (H5P_FILE_ACCESS);
 	H5Pset_vol(acc_tpl, vol_id, &under_fapl);
 
+  j_benchmark_timer_start();
+
 	/* Create a new file  */
 	fid = H5Fcreate(H5FILE_NAME, H5F_ACC_TRUNC, H5P_DEFAULT, acc_tpl);
 
@@ -128,16 +131,22 @@ static void benchmark_hdf_write(void) {
 
 	// Clean up
 	H5Fclose(fid);
+
+  elapsed = j_benchmark_timer_elapsed();
+
 	H5Pclose(acc_tpl);
 	H5Pclose(under_fapl);
 	H5VLclose(native_plugin_id);
 	H5VLterminate(vol_id, H5P_DEFAULT);
 	H5VLunregister (vol_id);
 
+  result->elapsed_time = elapsed;
+	result->operations = 10;
+
 	g_assert(H5VLis_registered("extlog") == 0);
 }
 
-static void benchmark_hdf_write_stock(void) {
+static void benchmark_hdf_write_stock(BenchmarkResult* result) {
   hid_t fid;
 	//hid_t under_fapl;
 	hid_t acc_tpl;
@@ -145,6 +154,7 @@ static void benchmark_hdf_write_stock(void) {
 	//hid_t status;
   //const H5VL_class_t* h5vl_log;
 	//hid_t native_plugin_id;
+  gdouble elapsed;
 
 	/* set native VOL plugin *//*
 	under_fapl = H5Pcreate (H5P_FILE_ACCESS);
@@ -163,6 +173,7 @@ static void benchmark_hdf_write_stock(void) {
 	acc_tpl = H5Pcreate (H5P_FILE_ACCESS);
 	//H5Pset_vol(acc_tpl, vol_id, &under_fapl);
 
+  j_benchmark_timer_start();
 
 	/* Create a new file  */
 	fid = H5Fcreate(H5FILE_NAME, H5F_ACC_TRUNC, H5P_DEFAULT, acc_tpl);
@@ -180,21 +191,28 @@ static void benchmark_hdf_write_stock(void) {
 
 	// Clean up
 	H5Fclose(fid);
+  
+  elapsed = j_benchmark_timer_elapsed();
+
 	H5Pclose(acc_tpl);
 	//H5Pclose(under_fapl);
 	//H5VLclose(native_plugin_id);
 	//H5VLterminate(vol_id, H5P_DEFAULT);
 	//H5VLunregister (vol_id);
 
+	result->elapsed_time = elapsed;
+	result->operations = 10;
+
 	//g_assert(H5VLis_registered("extlog") == 0);
 }
 
-static void benchmark_hdf_read(void) {
+static void benchmark_hdf_read(BenchmarkResult* result) {
     hid_t under_fapl;
     hid_t acc_tpl;
     hid_t vol_id, vol_id2;
     //ssize_t len;
     //char name[25];
+    gdouble elapsed;
 
 
     hid_t       file, dataset;                 /* File and dataset handles */
@@ -242,6 +260,7 @@ static void benchmark_hdf_read(void) {
      acc_tpl = H5Pcreate (H5P_FILE_ACCESS);
      H5Pset_vol(acc_tpl, vol_id, &under_fapl);
 
+  j_benchmark_timer_start();
 
   /* Open the file */
    file = H5Fopen("Test.h5", H5F_ACC_RDONLY, acc_tpl);
@@ -343,22 +362,27 @@ static void benchmark_hdf_read(void) {
   }
    status = H5Fclose(file);
 
-
+    elapsed = j_benchmark_timer_elapsed();
 
     status = H5Pclose(acc_tpl);
     status = H5Pclose(under_fapl);
     status = H5VLclose(native_plugin_id);
     status = H5VLterminate(vol_id, H5P_DEFAULT);
     status = H5VLunregister (vol_id);
+
+	  result->elapsed_time = elapsed;
+  	result->operations = 10;
+
     g_assert(H5VLis_registered("extlog") == 0);
 }
 
-static void benchmark_hdf_read_stock(void) {
+static void benchmark_hdf_read_stock(BenchmarkResult* result) {
     //hid_t under_fapl;
     hid_t acc_tpl;
     //hid_t vol_id, vol_id2;
     //ssize_t len;
     //char name[25];
+    gdouble elapsed;
 
 
     hid_t       file, dataset;                 /* File and dataset handles */
@@ -406,6 +430,7 @@ static void benchmark_hdf_read_stock(void) {
      acc_tpl = H5Pcreate (H5P_FILE_ACCESS);
      //H5Pset_vol(acc_tpl, vol_id, &under_fapl);
 
+  j_benchmark_timer_start();
 
   /* Open the file */
    file = H5Fopen("Test.h5", H5F_ACC_RDONLY, acc_tpl);
@@ -507,13 +532,17 @@ static void benchmark_hdf_read_stock(void) {
   }
    status = H5Fclose(file);
 
-
+    elapsed = j_benchmark_timer_elapsed();
 
     status = H5Pclose(acc_tpl);
     //status = H5Pclose(under_fapl);
     //status = H5VLclose(native_plugin_id);
     //status = H5VLterminate(vol_id, H5P_DEFAULT);
     //status = H5VLunregister (vol_id);
+
+	  result->elapsed_time = elapsed;
+  	result->operations = 10;
+
     g_assert(H5VLis_registered("extlog") == 0);
 }
 
