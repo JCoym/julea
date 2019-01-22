@@ -133,7 +133,7 @@ static void test_hdf_read(void) {
     herr_t status __attribute__((unused));
 
     hid_t attr, atype, aspace; /* Attribute, datatype and dataspace identifiers */
-    int rank;
+    int rank __attribute__((unused));
     hsize_t sdim[64];
 
     size_t npoints; /* Number of elements in the array attribute. */

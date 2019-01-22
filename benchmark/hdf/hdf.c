@@ -177,7 +177,7 @@ static void benchmark_hdf_read(BenchmarkResult *result) {
     herr_t status __attribute__((unused));
 
     hid_t attr, atype, aspace; /* Attribute, datatype and dataspace identifiers */
-    int rank;
+    int rank __attribute__((unused));
     hsize_t sdim[64];
 
     size_t npoints; /* Number of elements in the array attribute. */
@@ -304,7 +304,7 @@ static void benchmark_hdf_read_stock(BenchmarkResult *result) {
     herr_t status __attribute__((unused));
 
     hid_t attr, atype, aspace; /* Attribute, datatype and dataspace identifiers */
-    int rank;
+    int rank __attribute__((unused));
     hsize_t sdim[64];
 
     size_t npoints; /* Number of elements in the array attribute. */
