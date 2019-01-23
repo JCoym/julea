@@ -24,15 +24,12 @@ typedef struct JHG_t
 
 typedef struct JHD_t
 {
-	char *name;
 	char *location;
-	int position;
+	char *name;
 	size_t data_size;
-	JKV *size;
 	JDistribution *distribution;
 	JDistributedObject *object;
-	JKV *_distribution;
-	JKV *ts;
+	JKV *kv;
 } JHD_t; /* structure for dataset*/
 
 typedef struct JHA_t
@@ -57,17 +54,15 @@ bson_t *j_hdf5_serialize(const void *, size_t);
 
 bson_t *j_hdf5_serialize_ts (const void *, size_t, const void *, size_t);
 
-bson_t *j_hdf5_serialize_size(size_t);
-
-bson_t *j_hdf5_serialize_distribution(JDistribution *);
+bson_t *j_hdf5_serialize_dataset(const void *, size_t, const void *, size_t, size_t, JDistribution *);
 
 void j_hdf5_deserialize(const bson_t *, void *, size_t);
 
-void *j_hdf5_deserialize_t (const bson_t*);
+void *j_hdf5_deserialize_type (const bson_t*);
 
-void *j_hdf5_deserialize_s (const bson_t*);
+void *j_hdf5_deserialize_space (const bson_t*);
 
-void j_hdf5_deserialize_distribution(const bson_t *, JHD_t *);
+void j_hdf5_deserialize_dataset(const bson_t *, JHD_t *, size_t *);
 
 void j_hdf5_deserialize_meta(const bson_t *, size_t *);
 
