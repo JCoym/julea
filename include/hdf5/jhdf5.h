@@ -53,11 +53,11 @@ char *j_hdf5_encode_type(const char *, hid_t *, hid_t, size_t *);
 
 char *j_hdf5_encode_space(const char *, hid_t *, hid_t, size_t *);
 
-bson_t *j_hdf5_serialize(char *, const void *, size_t);
+bson_t *j_hdf5_serialize(const void *, size_t);
 
-bson_t *j_hdf5_serialize_ts (char *, const void *, size_t, const void *, size_t);
+bson_t *j_hdf5_serialize_ts (const void *, size_t, const void *, size_t);
 
-bson_t *j_hdf5_serialize_size(char *, size_t);
+bson_t *j_hdf5_serialize_size(size_t);
 
 bson_t *j_hdf5_serialize_distribution(JDistribution *);
 

@@ -203,7 +203,7 @@ j_hdf5_encode_space (const char *property, hid_t *space_id, hid_t cpl_id, size_t
 }
 
 bson_t*
-j_hdf5_serialize (char *name, const void *data, size_t data_size)
+j_hdf5_serialize (const void *data, size_t data_size)
 {
 	bson_t* b;
 
@@ -212,7 +212,6 @@ j_hdf5_serialize (char *name, const void *data, size_t data_size)
 	b = bson_new();
 	bson_init(b);
 
-	bson_append_utf8(b, "name", -1, name, -1);
 	bson_append_binary(b, "data", -1, BSON_SUBTYPE_BINARY, data, data_size);
 	bson_append_int32(b, "size", -1, (int32_t)data_size);
 
@@ -222,7 +221,7 @@ j_hdf5_serialize (char *name, const void *data, size_t data_size)
 }
 
 bson_t*
-j_hdf5_serialize_ts (char *name, const void *type_data, size_t type_size, const void *space_data, size_t space_size)
+j_hdf5_serialize_ts (const void *type_data, size_t type_size, const void *space_data, size_t space_size)
 {
 	bson_t* b;
 
@@ -231,7 +230,6 @@ j_hdf5_serialize_ts (char *name, const void *type_data, size_t type_size, const 
 	b = bson_new();
 	bson_init(b);
 
-	bson_append_utf8(b, "name", -1, name, -1);
 	bson_append_int32(b, "tsize", -1, (int32_t)type_size);
 	bson_append_int32(b, "ssize", -1, (int32_t)space_size);
 	bson_append_binary(b, "tdata", -1, BSON_SUBTYPE_BINARY, type_data, type_size);
@@ -243,7 +241,7 @@ j_hdf5_serialize_ts (char *name, const void *type_data, size_t type_size, const 
 }
 
 bson_t*
-j_hdf5_serialize_size (char *name, size_t data_size)
+j_hdf5_serialize_size (size_t data_size)
 {
 	bson_t* b;
 
@@ -252,7 +250,6 @@ j_hdf5_serialize_size (char *name, size_t data_size)
 	b = bson_new();
 	bson_init(b);
 
-	bson_append_utf8(b, "name", -1, name, -1);
 	bson_append_int32(b, "size", -1, (int32_t)data_size);
 
 	j_trace_leave(G_STRFUNC);
@@ -572,7 +569,7 @@ H5VL_extlog_attr_create(void *obj, H5VL_loc_params_t loc_params, const char *att
 	strcat(tsloc, "_ts");
 	attribute->ts = j_kv_new("hdf5", tsloc);
 	batch = j_batch_new_for_template(J_SEMANTICS_TEMPLATE_DEFAULT);
-	value = j_hdf5_serialize_ts(tsloc, type_buf, type_size, space_buf, space_size);
+	value = j_hdf5_serialize_ts(type_buf, type_size, space_buf, space_size);
 	j_kv_put(attribute->ts, value, batch);
 	j_batch_execute(batch);
 	j_trace_leave(G_STRFUNC);
@@ -698,7 +695,7 @@ H5VL_extlog_attr_write(void *attr, hid_t dtype_id __attribute__((unused)), const
 	j_trace_enter(G_STRFUNC, NULL);
 
 	batch = j_batch_new_for_template(J_SEMANTICS_TEMPLATE_DEFAULT);
-	value = j_hdf5_serialize(d->location, buf, d->data_size);
+	value = j_hdf5_serialize(buf, d->data_size);
 	j_kv_put(d->kv, value, batch);
 	j_batch_execute(batch);
 
@@ -1034,13 +1031,13 @@ H5VL_extlog_dataset_create(void *obj, H5VL_loc_params_t loc_params, const char *
 	strcpy(tsloc, dset->location);
 	strcat(tsloc, "_ts");
 	dset->ts = j_kv_new("hdf5", tsloc);
-	value = j_hdf5_serialize_ts(tsloc, type_buf, type_size, space_buf, space_size);
+	value = j_hdf5_serialize_ts(type_buf, type_size, space_buf, space_size);
 	j_kv_put(dset->ts, value, batch);
 
 	strcpy(sizeloc, dset->location);
 	strcat(sizeloc, "_size");
 	dset->size = j_kv_new("hdf5", sizeloc);
-	value = j_hdf5_serialize_size(sizeloc, data_size);
+	value = j_hdf5_serialize_size(data_size);
 	j_kv_put(dset->size, value, batch);
 	j_batch_execute(batch);
 	j_trace_leave(G_STRFUNC);
