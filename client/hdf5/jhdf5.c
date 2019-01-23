@@ -222,6 +222,27 @@ j_hdf5_serialize (char *name, const void *data, size_t data_size)
 }
 
 bson_t*
+j_hdf5_serialize_ts (char *name, const void *type_data, size_t type_size, const void *space_data, size_t space_size)
+{
+	bson_t* b;
+
+	j_trace_enter(G_STRFUNC, NULL);
+
+	b = bson_new();
+	bson_init(b);
+
+	bson_append_utf8(b, "name", -1, name, -1);
+	bson_append_int32(b, "tsize", -1, (int32_t)type_size);
+	bson_append_int32(b, "ssize", -1, (int32_t)space_size);
+	bson_append_binary(b, "tdata", -1, BSON_SUBTYPE_BINARY, type_data, type_size);
+	bson_append_binary(b, "sdata", -1, BSON_SUBTYPE_BINARY, space_data, space_size);
+
+	j_trace_leave(G_STRFUNC);
+
+	return b;
+}
+
+bson_t*
 j_hdf5_serialize_size (char *name, size_t data_size)
 {
 	bson_t* b;
@@ -288,6 +309,90 @@ j_hdf5_deserialize (const bson_t* b, void *data, size_t data_size)
 	}
 	memcpy(data, buf, data_size);
 	j_trace_leave(G_STRFUNC);
+}
+
+void*
+j_hdf5_deserialize_t (const bson_t* b)
+{
+	bson_iter_t iterator;
+	const void *buf;
+	bson_subtype_t bs;
+	void* type_data;
+	size_t type_size;
+
+	j_trace_enter(G_STRFUNC, NULL);
+
+	bson_iter_init(&iterator, b);
+	while (bson_iter_next(&iterator))
+	{
+		gchar const* key;
+
+		key = bson_iter_key(&iterator);
+
+		if (g_strcmp0(key, "tsize") == 0)
+		{
+			type_size = bson_iter_int32(&iterator);
+			type_data = malloc(type_size);
+		}
+	}
+	bson_iter_init(&iterator, b);
+	bs = BSON_SUBTYPE_BINARY;
+	while (bson_iter_next(&iterator))
+	{
+		gchar const* key;
+
+		key = bson_iter_key(&iterator);
+
+		if (g_strcmp0(key, "tdata") == 0)
+		{
+			bson_iter_binary(&iterator, &bs, (uint32_t *)&type_size, (const uint8_t **) &buf);
+		}
+	}
+	j_trace_leave(G_STRFUNC);
+	memcpy(type_data, buf, type_size);
+	return type_data;
+}
+
+void*
+j_hdf5_deserialize_s (const bson_t* b)
+{
+	bson_iter_t iterator;
+	const void *buf;
+	bson_subtype_t bs;
+	void* space_data;
+	size_t space_size;
+
+	j_trace_enter(G_STRFUNC, NULL);
+
+	bson_iter_init(&iterator, b);
+	while (bson_iter_next(&iterator))
+	{
+		gchar const* key;
+
+		key = bson_iter_key(&iterator);
+
+		if (g_strcmp0(key, "ssize") == 0)
+		{
+			space_size = bson_iter_int32(&iterator);
+			space_data = malloc(space_size);
+		}
+	}
+	bson_iter_init(&iterator, b);
+	bs = BSON_SUBTYPE_BINARY;
+	while (bson_iter_next(&iterator))
+	{
+		gchar const* key;
+
+		key = bson_iter_key(&iterator);
+
+		if (g_strcmp0(key, "sdata") == 0)
+		{
+			bson_iter_binary(&iterator, &bs, (uint32_t *)&space_size, (const uint8_t **) &buf);
+		}
+	}
+	j_trace_leave(G_STRFUNC);
+	memcpy(space_data, buf, space_size);
+	return space_data;
 }
 
 void
@@ -386,8 +491,7 @@ H5VL_extlog_attr_create(void *obj, H5VL_loc_params_t loc_params, const char *att
 	size_t data_size;
 	bson_t* value;
 	JBatch* batch;
-	char* typeloc;
-	char* spaceloc;
+	char* tsloc;
 
 	attribute = (JHA_t *)malloc(sizeof(*attribute));
 
@@ -461,20 +565,16 @@ H5VL_extlog_attr_create(void *obj, H5VL_loc_params_t loc_params, const char *att
 		exit(1);
 	} /* end switch */
 
-	j_trace_enter(G_STRFUNC, NULL);
-	typeloc = g_strdup(attribute->location);
-	attribute->type = j_kv_new("hdf5", strcat(typeloc, "_type"));
-	batch = j_batch_new_for_template(J_SEMANTICS_TEMPLATE_DEFAULT);
-	value = j_hdf5_serialize(typeloc, type_buf, type_size);
-	j_kv_put(attribute->type, value, batch);
-	attribute->type_size = type_size;
+	tsloc = (char*) malloc(strlen(attribute->location) + 4);
 
-	spaceloc = g_strdup(attribute->location);
-	attribute->space = j_kv_new("hdf5", strcat(spaceloc, "_space"));
-	value = j_hdf5_serialize(spaceloc, space_buf, space_size);
-	j_kv_put(attribute->space, value, batch);
+	j_trace_enter(G_STRFUNC, NULL);
+	strcpy(tsloc, attribute->location);
+	strcat(tsloc, "_ts");
+	attribute->ts = j_kv_new("hdf5", tsloc);
+	batch = j_batch_new_for_template(J_SEMANTICS_TEMPLATE_DEFAULT);
+	value = j_hdf5_serialize_ts(tsloc, type_buf, type_size, space_buf, space_size);
+	j_kv_put(attribute->ts, value, batch);
 	j_batch_execute(batch);
-	attribute->space_size = space_size;
 	j_trace_leave(G_STRFUNC);
 
 	return (void *)attribute;
@@ -495,12 +595,7 @@ H5VL_extlog_attr_open(void *obj, H5VL_loc_params_t loc_params, const char *attr_
 	JKV *kv;
 	bson_t data[1];
 	JBatch *batch;
-	JKV *space;
-	bson_t spacedata[1];
-	JKV *type;
-	bson_t typedata[1];
-	char* typeloc;
-	char* spaceloc;
+	char* tsloc;
 
 	attribute = (JHA_t *)malloc(sizeof(*attribute));
 	attribute->name = g_strdup(attr_name);
@@ -542,33 +637,20 @@ H5VL_extlog_attr_open(void *obj, H5VL_loc_params_t loc_params, const char *attr_
 		exit(1);
 	} /* end switch */
 
-	typeloc = (char*) malloc(strlen(attribute->location) + 6);
-	spaceloc = (char*) malloc(strlen(attribute->location) + 7);
+	tsloc = (char*) malloc(strlen(attribute->location) + 4);
 
 	j_trace_enter(G_STRFUNC, NULL);
 	batch = j_batch_new_for_template(J_SEMANTICS_TEMPLATE_DEFAULT);
 	kv = j_kv_new("hdf5", attribute->location);
 	j_kv_get(kv, data, batch);
 
-	strcpy(spaceloc, attribute->location);
-	strcat(spaceloc, "_space");
-	space = j_kv_new("hdf5", spaceloc);
-	j_kv_get(space, spacedata, batch);
-	
-	strcpy(typeloc, attribute->location);
-	strcat(typeloc, "_type");
-	type = j_kv_new("hdf5", typeloc);
-	j_kv_get(type, typedata, batch);
+	strcpy(tsloc, attribute->location);
+	strcat(tsloc, "_ts");
+	attribute->ts = j_kv_new("hdf5", tsloc);
 	if (j_batch_execute(batch))
 	{
 		j_hdf5_deserialize_meta(data, &(attribute->data_size));
 		attribute->kv = kv;
-
-		j_hdf5_deserialize_meta(spacedata, &(attribute->space_size));
-		attribute->space = space;
-
-		j_hdf5_deserialize_meta(typedata, &(attribute->type_size));
-		attribute->type = type;
 	}
 
 	return (void *)attribute;
@@ -638,8 +720,6 @@ H5VL_extlog_attr_get(void *attr, H5VL_attr_get_t get_type, hid_t dxpl_id __attri
 	JHA_t *d;
 	bson_t b[1];
 	JBatch* batch;
-	char* type_buf;
-	char* space_buf;
 
 	d = (JHA_t *)attr;
 
@@ -654,19 +734,13 @@ H5VL_extlog_attr_get(void *attr, H5VL_attr_get_t get_type, hid_t dxpl_id __attri
 	case H5VL_ATTR_GET_SPACE:
 	{
 		hid_t* ret_id = va_arg (arguments, hid_t *);
-		g_assert(d != NULL);
-		g_assert(d->space != NULL);
-		space_buf = malloc(d->space_size);
-
+		
 		j_trace_enter(G_STRFUNC, NULL);
 		batch = j_batch_new_for_template(J_SEMANTICS_TEMPLATE_DEFAULT);
-		j_kv_get(d->space, b, batch);
-		if (j_batch_execute(batch))
-		{
-			j_hdf5_deserialize(b, space_buf, d->space_size);
-		}
+		j_kv_get(d->ts, b, batch);
+		j_batch_execute(batch);
 		j_trace_leave(G_STRFUNC);
-		*ret_id = H5Sdecode(space_buf);
+		*ret_id = H5Sdecode(j_hdf5_deserialize_s(b));
 	}
 	break;
 	case H5VL_ATTR_GET_STORAGE_SIZE:
@@ -674,19 +748,13 @@ H5VL_extlog_attr_get(void *attr, H5VL_attr_get_t get_type, hid_t dxpl_id __attri
 	case H5VL_ATTR_GET_TYPE:
 	{
 		hid_t* ret_id = va_arg (arguments, hid_t *);
-		g_assert(d != NULL);
-		g_assert(d->type != NULL);
-		type_buf = malloc(d->type_size);
 
 		j_trace_enter(G_STRFUNC, NULL);
 		batch = j_batch_new_for_template(J_SEMANTICS_TEMPLATE_DEFAULT);
-		j_kv_get(d->type, b, batch);
-		if (j_batch_execute(batch))
-		{
-			j_hdf5_deserialize(b, type_buf, d->type_size);
-		}
+		j_kv_get(d->ts, b, batch);
+		j_batch_execute(batch);
 		j_trace_leave(G_STRFUNC);
-		*ret_id = H5Tdecode(type_buf);
+		*ret_id = H5Tdecode(j_hdf5_deserialize_t(b));
 	}
 	break;
 	default:
@@ -713,14 +781,9 @@ H5VL_extlog_attr_close(void *attr, hid_t dxpl_id __attribute__((unused)), void *
 		j_kv_unref(a->kv);
 	}
 
-	if (a->space != NULL)
+	if (a->ts != NULL)
 	{
-		j_kv_unref(a->space);
-	}
-
-	if (a->type != NULL)
-	{
-		j_kv_unref(a->type);
+		j_kv_unref(a->ts);
 	}
 
 	g_free(a->name);
@@ -884,8 +947,7 @@ H5VL_extlog_dataset_create(void *obj, H5VL_loc_params_t loc_params, const char *
 	size_t data_size;
 	bson_t* value;
 	JBatch* batch;
-	char* typeloc;
-	char* spaceloc;
+	char* tsloc;
 	char* distloc;
 	char* sizeloc;
 
@@ -958,8 +1020,7 @@ H5VL_extlog_dataset_create(void *obj, H5VL_loc_params_t loc_params, const char *
 	} /* end switch */
 
 	distloc = (char*) malloc(strlen(dset->location) + 6);
-	typeloc = (char*) malloc(strlen(dset->location) + 6);
-	spaceloc = (char*) malloc(strlen(dset->location) + 7);
+	tsloc = (char*) malloc(strlen(dset->location) + 4);
 	sizeloc = (char*) malloc(strlen(dset->location) + 6);
 
 	j_trace_enter(G_STRFUNC, NULL);
@@ -970,19 +1031,11 @@ H5VL_extlog_dataset_create(void *obj, H5VL_loc_params_t loc_params, const char *
 	value = j_hdf5_serialize_distribution(dset->distribution);
 	j_kv_put(dset->_distribution, value, batch);
 
-	strcpy(typeloc, dset->location);
-	strcat(typeloc, "_type");
-	dset->type = j_kv_new("hdf5", typeloc);
-	value = j_hdf5_serialize(typeloc, type_buf, type_size);
-	j_kv_put(dset->type, value, batch);
-	dset->type_size = type_size;
-	
-	strcpy(spaceloc, dset->location);
-	strcat(spaceloc, "_space");
-	dset->space = j_kv_new("hdf5", spaceloc);
-	value = j_hdf5_serialize(spaceloc, space_buf, space_size);
-	j_kv_put(dset->space, value, batch);
-	dset->space_size = space_size;
+	strcpy(tsloc, dset->location);
+	strcat(tsloc, "_ts");
+	dset->ts = j_kv_new("hdf5", tsloc);
+	value = j_hdf5_serialize_ts(tsloc, type_buf, type_size, space_buf, space_size);
+	j_kv_put(dset->ts, value, batch);
 
 	strcpy(sizeloc, dset->location);
 	strcat(sizeloc, "_size");
@@ -1000,17 +1053,12 @@ static void *
 H5VL_extlog_dataset_open(void *obj, H5VL_loc_params_t loc_params, const char *name, hid_t dapl_id  __attribute__((unused)), hid_t dxpl_id  __attribute__((unused)), void **req  __attribute__((unused)))
 {
 	JHD_t *dset;
-	JKV *space;
-	bson_t spacedata[1];
 	JBatch *batch;
-	JKV *type;
-	bson_t typedata[1];
 	JKV *dist;
 	bson_t distdata[1];
 	JKV *size;
 	bson_t sizedata[1];
-	char* typeloc;
-	char* spaceloc;
+	char* tsloc;
 	char* distloc;
 	char* sizeloc;
 
@@ -1056,20 +1104,15 @@ H5VL_extlog_dataset_open(void *obj, H5VL_loc_params_t loc_params, const char *na
 	} /* end switch */
 
 	distloc = (char*) malloc(strlen(dset->location) + 6);
-	typeloc = (char*) malloc(strlen(dset->location) + 6);
-	spaceloc = (char*) malloc(strlen(dset->location) + 7);
+	tsloc = (char*) malloc(strlen(dset->location) + 4);
 	sizeloc = (char*) malloc(strlen(dset->location) + 6);
 
 	batch = j_batch_new_for_template(J_SEMANTICS_TEMPLATE_DEFAULT);
-	strcpy(spaceloc, dset->location);
-	strcat(spaceloc, "_space");
-	space = j_kv_new("hdf5", spaceloc);
-	j_kv_get(space, spacedata, batch);
-	strcpy(typeloc, dset->location);
-	strcat(typeloc, "_type");
-	type = j_kv_new("hdf5", typeloc);
-	j_kv_get(type, typedata, batch);
 	
+	strcpy(tsloc, dset->location);
+	strcat(tsloc, "_ts");
+	dset->ts = j_kv_new("hdf5", tsloc);
+
 	strcpy(distloc, dset->location);
 	strcat(distloc, "_dist");
 	dist = j_kv_new("hdf5", distloc);
@@ -1081,12 +1124,6 @@ H5VL_extlog_dataset_open(void *obj, H5VL_loc_params_t loc_params, const char *na
 	j_kv_get(size, sizedata, batch);
 	if (j_batch_execute(batch))
 	{
-		j_hdf5_deserialize_meta(spacedata, &(dset->space_size));
-		dset->space = space;
-
-		j_hdf5_deserialize_meta(typedata, &(dset->type_size));
-		dset->type = type;
-
 		j_hdf5_deserialize_distribution(distdata, dset);
 
 		j_hdf5_deserialize_meta(sizedata, &(dset->data_size));
@@ -1142,8 +1179,6 @@ H5VL_extlog_dataset_get(void *dset, H5VL_dataset_get_t get_type, hid_t dxpl_id  
 	JHD_t *d;
 	bson_t b[1];
 	JBatch* batch;
-	char* type_buf;
-	char* space_buf;
 
 	d = (JHD_t *)dset;
 
@@ -1158,15 +1193,13 @@ H5VL_extlog_dataset_get(void *dset, H5VL_dataset_get_t get_type, hid_t dxpl_id  
 	case H5VL_DATASET_GET_SPACE:
 	{
 		hid_t* ret_id = va_arg (arguments, hid_t *);
-		space_buf = malloc(d->space_size);
 		
 		j_trace_enter(G_STRFUNC, NULL);
 		batch = j_batch_new_for_template(J_SEMANTICS_TEMPLATE_DEFAULT);
-		j_kv_get(d->space, b, batch);
+		j_kv_get(d->ts, b, batch);
 		j_batch_execute(batch);
-		j_hdf5_deserialize(b, space_buf, d->space_size);
 		j_trace_leave(G_STRFUNC);
-		*ret_id = H5Sdecode(space_buf);
+		*ret_id = H5Sdecode(j_hdf5_deserialize_s(b));
 	}
 		break;
 	case H5VL_DATASET_GET_SPACE_STATUS:
@@ -1176,15 +1209,13 @@ H5VL_extlog_dataset_get(void *dset, H5VL_dataset_get_t get_type, hid_t dxpl_id  
 	case H5VL_DATASET_GET_TYPE:
 	{
 		hid_t* ret_id = va_arg (arguments, hid_t *);
-		type_buf = malloc(d->type_size);
 
 		j_trace_enter(G_STRFUNC, NULL);
 		batch = j_batch_new_for_template(J_SEMANTICS_TEMPLATE_DEFAULT);
-		j_kv_get(d->type, b, batch);
+		j_kv_get(d->ts, b, batch);
 		j_batch_execute(batch);
-		j_hdf5_deserialize(b, type_buf, d->type_size);
 		j_trace_leave(G_STRFUNC);
-		*ret_id = H5Tdecode(type_buf);
+		*ret_id = H5Tdecode(j_hdf5_deserialize_t(b));
 	}
 		break;
 	default:
@@ -1233,14 +1264,9 @@ H5VL_extlog_dataset_close(void *dset, hid_t dxpl_id  __attribute__((unused)), vo
 		j_kv_unref(d->_distribution);
 	}
 
-	if (d->space != NULL)
+	if (d->ts != NULL)
 	{
-		j_kv_unref(d->space);
-	}
-
-	if (d->type != NULL)
-	{
-		j_kv_unref(d->type);
+		j_kv_unref(d->ts);
 	}
 
 	if (d->object != NULL)
