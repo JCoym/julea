@@ -69,7 +69,7 @@ hid_t native_plugin_id = -1;
 static const H5VL_class_t H5VL_log_g = {
 	0,
 	LOG,
-	"extlog",	  /* name */
+	"jhdf5",	  /* name */
 	H5VL_log_init, /* initialize */
 	H5VL_log_term, /* terminate */
 	sizeof(h5julea_fapl_t),

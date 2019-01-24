@@ -16,8 +16,8 @@
 #define DATASETNAME "IntArray"
 
 /* dataset dimensions */
-#define NX 5
-#define NY 6
+#define NX 1024
+#define NY 1024
 #define RANK 2
 
 static void create_random_attribute(hid_t location) {
@@ -101,7 +101,7 @@ static void benchmark_hdf_write(BenchmarkResult *result) {
     h5vl_log = H5PLget_plugin_info();
     vol_id = H5VLregister(h5vl_log);
     g_assert(vol_id > 0);
-    g_assert(H5VLis_registered("extlog") == 1);
+    g_assert(H5VLis_registered("jhdf5") == 1);
 
     native_plugin_id = H5VLget_plugin_id("native");
     g_assert(native_plugin_id > 0);
@@ -115,7 +115,7 @@ static void benchmark_hdf_write(BenchmarkResult *result) {
     /* Create a new file  */
     fid = H5Fcreate(H5FILE_NAME, H5F_ACC_TRUNC, H5P_DEFAULT, acc_tpl);
 
-    for (int i = 0; i < 10000; i++) {
+    for (int i = 0; i < 1000; i++) {
         char name[14];
         snprintf(name, sizeof name, "IntArray%05d", i);
         create_random_dataset(fid, name);
@@ -132,9 +132,9 @@ static void benchmark_hdf_write(BenchmarkResult *result) {
     H5VLunregister(vol_id);
 
     result->elapsed_time = elapsed;
-    result->operations = 10000;
+    result->operations = 1000;
 
-    g_assert(H5VLis_registered("extlog") == 0);
+    g_assert(H5VLis_registered("jhdf5") == 0);
 }
 
 static void benchmark_hdf_write_stock(BenchmarkResult *result) {
@@ -150,7 +150,7 @@ static void benchmark_hdf_write_stock(BenchmarkResult *result) {
     /* Create a new file  */
     fid = H5Fcreate(H5FILE_NAME, H5F_ACC_TRUNC, H5P_DEFAULT, acc_tpl);
 
-    for (int i = 0; i < 10000; i++) {
+    for (int i = 0; i < 1000; i++) {
         char name[14];
         snprintf(name, sizeof name, "IntArray%05d", i);
         create_random_dataset(fid, name);
@@ -163,7 +163,7 @@ static void benchmark_hdf_write_stock(BenchmarkResult *result) {
     H5Pclose(acc_tpl);
 
     result->elapsed_time = elapsed;
-    result->operations = 10000;
+    result->operations = 1000;
 }
 
 static void benchmark_hdf_read(BenchmarkResult *result) {
@@ -199,9 +199,9 @@ static void benchmark_hdf_read(BenchmarkResult *result) {
     h5vl_log = H5PLget_plugin_info();
     vol_id = H5VLregister(h5vl_log);
     g_assert(vol_id > 0);
-    g_assert(H5VLis_registered("extlog") == 1);
+    g_assert(H5VLis_registered("jhdf5") == 1);
 
-    vol_id2 = H5VLget_plugin_id("extlog");
+    vol_id2 = H5VLget_plugin_id("jhdf5");
     H5VLinitialize(vol_id2, H5P_DEFAULT);
     H5VLclose(vol_id2);
 
@@ -217,7 +217,7 @@ static void benchmark_hdf_read(BenchmarkResult *result) {
     /* Open the file */
     file = H5Fopen("Test.h5", H5F_ACC_RDONLY, acc_tpl);
 
-    for (int z = 0; z < 10000; z++) {
+    for (int z = 0; z < 1000; z++) {
         char name[14];
         snprintf(name, sizeof name, "IntArray%05d", z);
         /* Open the dataset */
@@ -290,9 +290,9 @@ static void benchmark_hdf_read(BenchmarkResult *result) {
     status = H5VLunregister(vol_id);
 
     result->elapsed_time = elapsed;
-    result->operations = 10000;
+    result->operations = 1000;
 
-    g_assert(H5VLis_registered("extlog") == 0);
+    g_assert(H5VLis_registered("jhdf5") == 0);
 }
 
 static void benchmark_hdf_read_stock(BenchmarkResult *result) {
@@ -323,7 +323,7 @@ static void benchmark_hdf_read_stock(BenchmarkResult *result) {
     /* Open the file */
     file = H5Fopen("Test.h5", H5F_ACC_RDONLY, acc_tpl);
 
-    for (int z = 0; z < 10000; z++) {
+    for (int z = 0; z < 1000; z++) {
         char name[14];
         snprintf(name, sizeof name, "IntArray%05d", z);
         /* Open the dataset */
@@ -392,7 +392,7 @@ static void benchmark_hdf_read_stock(BenchmarkResult *result) {
     status = H5Pclose(acc_tpl);
 
     result->elapsed_time = elapsed;
-    result->operations = 10000;
+    result->operations = 1000;
 }
 
 void benchmark_hdf(void) {

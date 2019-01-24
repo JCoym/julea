@@ -99,7 +99,7 @@ static void test_hdf_write(void) {
     h5vl_log = H5PLget_plugin_info();
     vol_id = H5VLregister(h5vl_log);
     g_assert(vol_id > 0);
-    g_assert(H5VLis_registered("extlog") == 1);
+    g_assert(H5VLis_registered("jhdf5") == 1);
 
     native_plugin_id = H5VLget_plugin_id("native");
     g_assert(native_plugin_id > 0);
@@ -120,7 +120,7 @@ static void test_hdf_write(void) {
     H5VLterminate(vol_id, H5P_DEFAULT);
     H5VLunregister(vol_id);
 
-    g_assert(H5VLis_registered("extlog") == 0);
+    g_assert(H5VLis_registered("jhdf5") == 0);
 }
 
 static void test_hdf_read(void) {
@@ -155,9 +155,9 @@ static void test_hdf_read(void) {
     h5vl_log = H5PLget_plugin_info();
     vol_id = H5VLregister(h5vl_log);
     g_assert(vol_id > 0);
-    g_assert(H5VLis_registered("extlog") == 1);
+    g_assert(H5VLis_registered("jhdf5") == 1);
 
-    vol_id2 = H5VLget_plugin_id("extlog");
+    vol_id2 = H5VLget_plugin_id("jhdf5");
     H5VLinitialize(vol_id2, H5P_DEFAULT);
     H5VLclose(vol_id2);
 
@@ -236,7 +236,7 @@ static void test_hdf_read(void) {
     status = H5VLclose(native_plugin_id);
     status = H5VLterminate(vol_id, H5P_DEFAULT);
     status = H5VLunregister(vol_id);
-    g_assert(H5VLis_registered("extlog") == 0);
+    g_assert(H5VLis_registered("jhdf5") == 0);
 }
 
 void test_hdf(void) {
