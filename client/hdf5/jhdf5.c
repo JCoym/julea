@@ -1,6 +1,3 @@
-#include <errno.h>
-#include <assert.h>
-#include <fcntl.h>
 #include <hdf5.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -26,7 +23,7 @@
 #define ERRORMSG(...)    \
 	printf(__VA_ARGS__); \
 	printf("\n");        \
-	assert(false);       \
+	g_assert(false);       \
 	exit(1);
 
 #define COUNT_MAX 2147479552
@@ -168,7 +165,7 @@ static herr_t H5VL_jhdf5_fapl_free(void *info __attribute__((unused)))
 static herr_t H5VL_log_init(hid_t vipl_id __attribute__((unused)))
 {
 	native_plugin_id = H5VLget_plugin_id("native");
-	assert(native_plugin_id > 0);
+	g_assert(native_plugin_id > 0);
 	return 0;
 }
 
@@ -182,7 +179,7 @@ j_hdf5_encode_type (const char *property, hid_t *type_id, hid_t cpl_id, size_t *
 {
 	char* type_buf;
 	H5Pget(cpl_id, property, type_id);
-	assert(-1 != *type_id);
+	g_assert(-1 != *type_id);
 	H5Tencode(*type_id, NULL, type_size);
 	type_buf = (char*) malloc(*type_size);
 	H5Tencode(*type_id, type_buf, type_size);
@@ -194,7 +191,7 @@ j_hdf5_encode_space (const char *property, hid_t *space_id, hid_t cpl_id, size_t
 {
 	char* space_buf;
 	H5Pget(cpl_id, property, space_id);
-	assert(-1 != *space_id);
+	g_assert(-1 != *space_id);
 	H5Sencode(*space_id, NULL, space_size);
 	space_buf = (char*) malloc(*space_size);
 	H5Sencode(*space_id, space_buf, space_size);
