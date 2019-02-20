@@ -19,6 +19,7 @@
 #define NX 1024
 #define NY 1024
 #define RANK 2
+#define ITER 1000
 
 static void create_random_attribute(hid_t location) {
     /* Create the data space for the attribute. */
@@ -51,7 +52,7 @@ static void create_random_dataset(hid_t location, const char *name) {
     hid_t datatype, dataspace;
     herr_t status __attribute__((unused));
     hsize_t dimsf[2]; /* dataset dimensions */
-    int data[NX][NY];
+    int (*data)[NX][NY] = malloc(sizeof *data);
 
     /* Define datatype for the data in the file*/
     datatype = H5Tcopy(H5T_NATIVE_INT);
@@ -71,7 +72,7 @@ static void create_random_dataset(hid_t location, const char *name) {
 
     for (size_t j = 0; j < NX; j++)
         for (size_t i = 0; i < NY; i++)
-            data[j][i] = i + j;
+            (*data)[j][i] = i + j;
 
     /* Write the data to the dataset using default transfer properties */
     H5Dwrite(dataset, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, data);
@@ -82,6 +83,8 @@ static void create_random_dataset(hid_t location, const char *name) {
     H5Sclose(dataspace);
     H5Tclose(datatype);
     H5Dclose(dataset);
+
+    free(data);
 }
 
 static void benchmark_hdf_write(BenchmarkResult *result) {
@@ -115,7 +118,7 @@ static void benchmark_hdf_write(BenchmarkResult *result) {
     /* Create a new file  */
     fid = H5Fcreate(H5FILE_NAME, H5F_ACC_TRUNC, H5P_DEFAULT, acc_tpl);
 
-    for (int i = 0; i < 1000; i++) {
+    for (int i = 0; i < ITER; i++) {
         char name[14];
         snprintf(name, sizeof name, "IntArray%05d", i);
         create_random_dataset(fid, name);
@@ -132,7 +135,7 @@ static void benchmark_hdf_write(BenchmarkResult *result) {
     H5VLunregister(vol_id);
 
     result->elapsed_time = elapsed;
-    result->operations = 1000;
+    result->operations = ITER;
 
     g_assert(H5VLis_registered("jhdf5") == 0);
 }
@@ -150,7 +153,7 @@ static void benchmark_hdf_write_stock(BenchmarkResult *result) {
     /* Create a new file  */
     fid = H5Fcreate(H5FILE_NAME, H5F_ACC_TRUNC, H5P_DEFAULT, acc_tpl);
 
-    for (int i = 0; i < 1000; i++) {
+    for (int i = 0; i < ITER; i++) {
         char name[14];
         snprintf(name, sizeof name, "IntArray%05d", i);
         create_random_dataset(fid, name);
@@ -163,7 +166,7 @@ static void benchmark_hdf_write_stock(BenchmarkResult *result) {
     H5Pclose(acc_tpl);
 
     result->elapsed_time = elapsed;
-    result->operations = 1000;
+    result->operations = ITER;
 }
 
 static void benchmark_hdf_read(BenchmarkResult *result) {
@@ -217,7 +220,7 @@ static void benchmark_hdf_read(BenchmarkResult *result) {
     /* Open the file */
     file = H5Fopen("Test.h5", H5F_ACC_RDONLY, acc_tpl);
 
-    for (int z = 0; z < 1000; z++) {
+    for (int z = 0; z < ITER; z++) {
         char name[14];
         snprintf(name, sizeof name, "IntArray%05d", z);
         /* Open the dataset */
@@ -290,7 +293,7 @@ static void benchmark_hdf_read(BenchmarkResult *result) {
     status = H5VLunregister(vol_id);
 
     result->elapsed_time = elapsed;
-    result->operations = 1000;
+    result->operations = ITER;
 
     g_assert(H5VLis_registered("jhdf5") == 0);
 }
@@ -323,7 +326,7 @@ static void benchmark_hdf_read_stock(BenchmarkResult *result) {
     /* Open the file */
     file = H5Fopen("Test.h5", H5F_ACC_RDONLY, acc_tpl);
 
-    for (int z = 0; z < 1000; z++) {
+    for (int z = 0; z < ITER; z++) {
         char name[14];
         snprintf(name, sizeof name, "IntArray%05d", z);
         /* Open the dataset */
@@ -392,7 +395,7 @@ static void benchmark_hdf_read_stock(BenchmarkResult *result) {
     status = H5Pclose(acc_tpl);
 
     result->elapsed_time = elapsed;
-    result->operations = 1000;
+    result->operations = ITER;
 }
 
 void benchmark_hdf(void) {
