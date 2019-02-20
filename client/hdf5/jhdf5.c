@@ -953,6 +953,8 @@ H5VL_jhdf5_dataset_create(void *obj, H5VL_loc_params_t loc_params, const char *n
 	}
 	dset->data_size = data_size;
 
+	batch = j_batch_new_for_template(J_SEMANTICS_TEMPLATE_DEFAULT);
+
 	switch (loc_params.obj_type)
 	{
 	case H5I_FILE:
@@ -964,6 +966,7 @@ H5VL_jhdf5_dataset_create(void *obj, H5VL_loc_params_t loc_params, const char *n
 
 		dset->distribution = j_distribution_new(J_DISTRIBUTION_ROUND_ROBIN);
 		dset->object = j_distributed_object_new("hdf5", dset->location, dset->distribution);
+		j_distributed_object_create(dset->object, batch);
 
 		j_trace_leave(G_STRFUNC);
 	}
@@ -978,6 +981,7 @@ H5VL_jhdf5_dataset_create(void *obj, H5VL_loc_params_t loc_params, const char *n
 
 		dset->distribution = j_distribution_new(J_DISTRIBUTION_ROUND_ROBIN);
 		dset->object = j_distributed_object_new("hdf5", dset->location, dset->distribution);
+		j_distributed_object_create(dset->object, batch);
 
 		j_trace_leave(G_STRFUNC);
 	}
@@ -1008,7 +1012,6 @@ H5VL_jhdf5_dataset_create(void *obj, H5VL_loc_params_t loc_params, const char *n
 	tsloc = (char*) malloc(strlen(dset->location) + 4);
 
 	j_trace_enter(G_STRFUNC, NULL);
-	batch = j_batch_new_for_template(J_SEMANTICS_TEMPLATE_DEFAULT);
 	strcpy(tsloc, dset->location);
 	strcat(tsloc, "_data");
 	dset->kv = j_kv_new("hdf5", tsloc);
