@@ -1,3 +1,25 @@
+/*
+ * JULEA - Flexible storage framework
+ * Copyright (C) 2017-2018 Michael Kuhn
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+/**
+ * \file
+ **/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -107,12 +129,15 @@ void j_hdf5_deserialize(const bson_t *, void *, size_t);
 void *j_hdf5_deserialize_type (const bson_t*);
 void *j_hdf5_deserialize_space (const bson_t*);
 void j_hdf5_deserialize_dataset(const bson_t *, JHD_t *, size_t *);
-void j_hdf5_deserialize_meta(const bson_t *, size_t *);
+void j_hdf5_deserialize_size(const bson_t *, size_t *);
 
 char *create_path(const char *, char *);
 
 hid_t native_plugin_id = -1;
 
+/**
+ * The class providing the functions to HDF5
+ **/
 static const H5VL_class_t H5VL_log_g = {
 	0,
 	LOG,
@@ -197,6 +222,15 @@ char *err_msg = 0; /* pointer to an error string */
 
 h5julea_fapl_t *ginfo = NULL;
 
+/**
+ * Copies the file operations
+ *
+ * \author Johannes Coym
+ *
+ * \param info The original file operations
+ *
+ * \return fapl_target The new file operations.
+ **/
 static void *H5VL_jhdf5_fapl_copy(const void *info)
 {
 	const h5julea_fapl_t* fapl_source = (const h5julea_fapl_t*) info;
@@ -206,12 +240,26 @@ static void *H5VL_jhdf5_fapl_copy(const void *info)
 	return (void *)fapl_target;
 }
 
+/**
+ * Frees the file operations(unused)
+ *
+ * \author Johannes Coym
+ *
+ * \return err Error
+ **/
 static herr_t H5VL_jhdf5_fapl_free(void *info __attribute__((unused)))
 {
 	herr_t err = 0;
 	return err;
 }
 
+/**
+ * Initializes the plugin
+ *
+ * \author Johannes Coym
+ *
+ * \return err Error
+ **/
 static herr_t H5VL_log_init(hid_t vipl_id __attribute__((unused)))
 {
 	native_plugin_id = H5VLget_plugin_id("native");
@@ -219,11 +267,25 @@ static herr_t H5VL_log_init(hid_t vipl_id __attribute__((unused)))
 	return 0;
 }
 
+/**
+ * Terminates the plugin
+ *
+ * \author Johannes Coym
+ *
+ * \return err Error
+ **/
 static herr_t H5VL_log_term(hid_t vtpl_id __attribute__((unused)))
 {
 	return 0;
 }
 
+/**
+ * Encodes the type
+ *
+ * \author Johannes Coym
+ *
+ * \return type_buf The encoded type
+ **/
 char*
 j_hdf5_encode_type (const char *property, hid_t *type_id, hid_t cpl_id, size_t *type_size)
 {
@@ -236,6 +298,13 @@ j_hdf5_encode_type (const char *property, hid_t *type_id, hid_t cpl_id, size_t *
 	return type_buf;
 }
 
+/**
+ * Encodes the space
+ *
+ * \author Johannes Coym
+ *
+ * \return type_buf The encoded space
+ **/
 char*
 j_hdf5_encode_space (const char *property, hid_t *space_id, hid_t cpl_id, size_t *space_size)
 {
@@ -248,6 +317,16 @@ j_hdf5_encode_space (const char *property, hid_t *space_id, hid_t cpl_id, size_t
 	return space_buf;
 }
 
+/**
+ * Serializes attribute data
+ *
+ * \author Johannes Coym
+ *
+ * \param data The data
+ * \param size The size of the data
+ *
+ * \return b The serialized BSON
+ **/
 bson_t*
 j_hdf5_serialize (const void *data, size_t data_size)
 {
@@ -266,6 +345,18 @@ j_hdf5_serialize (const void *data, size_t data_size)
 	return b;
 }
 
+/**
+ * Serializes type and space data
+ *
+ * \author Johannes Coym
+ *
+ * \param type_data The type data
+ * \param type_size The size of the type data
+ * \param space_data The space data
+ * \param space_size The size of the space data
+ *
+ * \return b The serialized BSON
+ **/
 bson_t*
 j_hdf5_serialize_ts (const void *type_data, size_t type_size, const void *space_data, size_t space_size)
 {
@@ -286,6 +377,20 @@ j_hdf5_serialize_ts (const void *type_data, size_t type_size, const void *space_
 	return b;
 }
 
+/**
+ * Serializes all metadata from datasets
+ *
+ * \author Johannes Coym
+ *
+ * \param type_data The type data
+ * \param type_size The size of the type data
+ * \param space_data The space data
+ * \param space_size The size of the space data
+ * \param data_size The data size of the dataset
+ * \param distribution The distribution of the dataset
+ *
+ * \return b The serialized BSON
+ **/
 bson_t*
 j_hdf5_serialize_dataset (const void *type_data, size_t type_size, const void *space_data, size_t space_size, size_t data_size, JDistribution* distribution)
 {
@@ -313,6 +418,15 @@ j_hdf5_serialize_dataset (const void *type_data, size_t type_size, const void *s
 	return b;
 }
 
+/**
+ * Deserializes only the data from the bson
+ *
+ * \author Johannes Coym
+ *
+ * \param b The bson containing the data
+ * \param data The pointer where the data is returned
+ * \param data_size The size of the data
+ **/
 void
 j_hdf5_deserialize (const bson_t* b, void *data, size_t data_size)
 {
@@ -342,6 +456,15 @@ j_hdf5_deserialize (const bson_t* b, void *data, size_t data_size)
 	j_trace_leave(G_STRFUNC);
 }
 
+/**
+ * Deserializes the type data from the bson
+ *
+ * \author Johannes Coym
+ *
+ * \param b The bson containing the data
+ *
+ * \return type_data the encoded type data
+ **/
 void*
 j_hdf5_deserialize_type (const bson_t* b)
 {
@@ -384,6 +507,15 @@ j_hdf5_deserialize_type (const bson_t* b)
 	return type_data;
 }
 
+/**
+ * Deserializes the space data from the bson
+ *
+ * \author Johannes Coym
+ *
+ * \param b The bson containing the data
+ *
+ * \return space_data the encoded space data
+ **/
 void*
 j_hdf5_deserialize_space (const bson_t* b)
 {
@@ -426,8 +558,16 @@ j_hdf5_deserialize_space (const bson_t* b)
 	return space_data;
 }
 
+/**
+ * Deserializes only the data size from the bson
+ *
+ * \author Johannes Coym
+ *
+ * \param b The bson containing the data
+ * \param data_size Pointer to the data size to return
+ **/
 void
-j_hdf5_deserialize_meta (const bson_t* b, size_t* data_size)
+j_hdf5_deserialize_size (const bson_t* b, size_t* data_size)
 {
 	bson_iter_t iterator;
 
@@ -452,6 +592,15 @@ j_hdf5_deserialize_meta (const bson_t* b, size_t* data_size)
 	j_trace_leave(G_STRFUNC);
 }
 
+/**
+ * Deserializes data size and disttribution from the bson
+ *
+ * \author Johannes Coym
+ *
+ * \param b The bson containing the data
+ * \param d The dataset whoch should contain the distribution
+ * \param data_size Pointer to the data size to return
+ **/
 void
 j_hdf5_deserialize_dataset (const bson_t* b, JHD_t* d, size_t* data_size)
 {
@@ -488,29 +637,34 @@ j_hdf5_deserialize_dataset (const bson_t* b, JHD_t* d, size_t* data_size)
 	j_trace_leave(G_STRFUNC);
 }
 
-char* create_path(const char* name, char* prev_location) {
-	static const char* sep = "/";
-	char* res = NULL;
+/**
+ * Generates the path of the current element
+ *
+ * \author Johannes Coym
+ *
+ * \param name The name of the current element
+ * \param prev_path The previous path
+ *
+ * \return path 
+ **/
+char* create_path(const char* name, char* prev_path) {
+	static const char* seperator = "/";
+	char* path = NULL;
 
-	if (NULL != prev_location && NULL != name) {
-		res = (char*) malloc(strlen(prev_location) + strlen(sep) + strlen(name) + 1);
-		strcpy(res, prev_location);
-		strcat(res, sep);
-		strcat(res, name);
-	} 
-	else {
-		ERRORMSG("Couldn't create path");
-	}
-	return res;
+	path = (char*) malloc(strlen(prev_path) + strlen(seperator) + strlen(name) + 1);
+	strcpy(path, prev_path);
+	strcat(path, seperator);
+	strcat(path, name);
+	return path;
 }
 
-/*-------------------------------------------------------------------------
-* Function:	H5VL_jhdf5_attr_create
-*
-* Purpose:	Creates an attribute on an object.
-*-------------------------------------------------------------------------
-*/
-
+/**
+ * Creates a new attribute
+ *
+ * \author Johannes Coym
+ *
+ * \return attribute The new attribute 
+ **/
 static void *
 H5VL_jhdf5_attr_create(void *obj, H5VL_loc_params_t loc_params, const char *attr_name, hid_t acpl_id, hid_t aapl_id __attribute__((unused)), hid_t dxpl_id __attribute__((unused)), void **req __attribute__((unused)))
 {
@@ -616,12 +770,13 @@ H5VL_jhdf5_attr_create(void *obj, H5VL_loc_params_t loc_params, const char *attr
 	return (void *)attribute;
 }
 
-/*-------------------------------------------------------------------------
-* Function:	H5VL_jhdf5_attr_open
-*
-* Purpose:	Opens an attribute inside a native h5 file
-*-------------------------------------------------------------------------
-*/
+/**
+ * Opens an attribute
+ *
+ * \author Johannes Coym
+ *
+ * \return attribute The attribute 
+ **/
 static void *
 H5VL_jhdf5_attr_open(void *obj, H5VL_loc_params_t loc_params, const char *attr_name,
 					  hid_t aapl_id __attribute__((unused)), hid_t dxpl_id __attribute__((unused)), void **req __attribute__((unused)))
@@ -685,7 +840,7 @@ H5VL_jhdf5_attr_open(void *obj, H5VL_loc_params_t loc_params, const char *attr_n
 	attribute->ts = j_kv_new("hdf5", tsloc);
 	if (j_batch_execute(batch))
 	{
-		j_hdf5_deserialize_meta(data, &(attribute->data_size));
+		j_hdf5_deserialize_size(data, &(attribute->data_size));
 		attribute->kv = kv;
 	}
 
@@ -694,12 +849,11 @@ H5VL_jhdf5_attr_open(void *obj, H5VL_loc_params_t loc_params, const char *attr_n
 	return (void *)attribute;
 }
 
-/*-------------------------------------------------------------------------
-* Function:	H5VL_jhdf5_attr_read
-*
-* Purpose:	Reads data from attribute
-*-------------------------------------------------------------------------
-*/
+/**
+ * Reads the data from the attribute
+ *
+ * \author Johannes Coym
+ **/
 static herr_t
 H5VL_jhdf5_attr_read(void *attr, hid_t dtype_id __attribute__((unused)), void *buf, hid_t dxpl_id __attribute__((unused)), void **req __attribute__((unused)))
 {
@@ -720,12 +874,11 @@ H5VL_jhdf5_attr_read(void *attr, hid_t dtype_id __attribute__((unused)), void *b
 	return 1;
 }
 
-/*-------------------------------------------------------------------------
-* Function:	H5VL_jhdf5_attr_write
-*
-* Purpose:	Writes data to attribute
-*-------------------------------------------------------------------------
-*/
+/**
+ * Writes the data of the attribute
+ *
+ * \author Johannes Coym
+ **/
 static herr_t
 H5VL_jhdf5_attr_write(void *attr, hid_t dtype_id __attribute__((unused)), const void *buf, hid_t dxpl_id __attribute__((unused)), void **req __attribute__((unused)))
 {
@@ -745,12 +898,13 @@ H5VL_jhdf5_attr_write(void *attr, hid_t dtype_id __attribute__((unused)), const 
 	return 1;
 }
 
-/*-------------------------------------------------------------------------
-* Function:	H5VL_jhdf5_attr_get
-*
-* Purpose:	Gets certain information about an attribute
-*-------------------------------------------------------------------------
-*/
+/**
+ * Provides get Functions of the attribute
+ *
+ * \author Johannes Coym
+ *
+ * \return ret_value The error code
+ **/
 static herr_t
 H5VL_jhdf5_attr_get(void *attr, H5VL_attr_get_t get_type, hid_t dxpl_id __attribute__((unused)), void **req __attribute__((unused)), va_list arguments)
 {
@@ -803,12 +957,11 @@ H5VL_jhdf5_attr_get(void *attr, H5VL_attr_get_t get_type, hid_t dxpl_id __attrib
 	return ret_value;
 }
 
-/*-------------------------------------------------------------------------
-* Function:	H5VL_jhdf5_attr_close
-*
-* Purpose:	Closes an attribute
-*-------------------------------------------------------------------------
-*/
+/**
+ * Closes the attribute
+ *
+ * \author Johannes Coym
+ **/
 static herr_t
 H5VL_jhdf5_attr_close(void *attr, hid_t dxpl_id __attribute__((unused)), void **req __attribute__((unused)))
 {
@@ -832,6 +985,13 @@ H5VL_jhdf5_attr_close(void *attr, hid_t dxpl_id __attribute__((unused)), void **
 	return 1;
 }
 
+/**
+ * Creates a new file
+ *
+ * \author Johannes Coym
+ *
+ * \return file The new file 
+ **/
 static void *
 H5VL_jhdf5_file_create(const char *fname, unsigned flags __attribute__((unused)), hid_t fcpl_id __attribute__((unused)), hid_t fapl_id, hid_t dxpl_id __attribute__((unused)), void **req __attribute__((unused)))
 {
@@ -843,6 +1003,13 @@ H5VL_jhdf5_file_create(const char *fname, unsigned flags __attribute__((unused))
 	return (void *)file;
 }
 
+/**
+ * Opens a file
+ *
+ * \author Johannes Coym
+ *
+ * \return file The file 
+ **/
 static void *
 H5VL_jhdf5_file_open(const char *fname, unsigned flags __attribute__((unused)), hid_t fapl_id, hid_t dxpl_id __attribute__((unused)), void **req __attribute__((unused)))
 {
@@ -854,6 +1021,11 @@ H5VL_jhdf5_file_open(const char *fname, unsigned flags __attribute__((unused)), 
 	return (void *)file;
 }
 
+/**
+ * Closes the file
+ *
+ * \author Johannes Coym
+ **/
 static herr_t
 H5VL_jhdf5_file_close(void *file, hid_t dxpl_id __attribute__((unused)), void **req __attribute__((unused)))
 {
@@ -865,6 +1037,13 @@ H5VL_jhdf5_file_close(void *file, hid_t dxpl_id __attribute__((unused)), void **
 	return 1;
 }
 
+/**
+ * Creates a new group
+ *
+ * \author Johannes Coym
+ *
+ * \return group The new group 
+ **/
 static void *
 H5VL_jhdf5_group_create(void *obj, H5VL_loc_params_t loc_params, const char *name,
 						 hid_t gcpl_id __attribute__((unused)), hid_t gapl_id __attribute__((unused)), hid_t dxpl_id __attribute__((unused)), void **req __attribute__((unused)))
@@ -913,6 +1092,13 @@ H5VL_jhdf5_group_create(void *obj, H5VL_loc_params_t loc_params, const char *nam
 	return (void *)group;
 }
 
+/**
+ * Opens a group
+ *
+ * \author Johannes Coym
+ *
+ * \return group The group 
+ **/
 static void *H5VL_jhdf5_group_open(void *obj, H5VL_loc_params_t loc_params, const char *name, hid_t gapl_id __attribute__((unused)), hid_t dxpl_id __attribute__((unused)), void **req __attribute__((unused)))
 {
 	JHG_t *group;
@@ -959,6 +1145,11 @@ static void *H5VL_jhdf5_group_open(void *obj, H5VL_loc_params_t loc_params, cons
 	return (void *)group;
 }
 
+/**
+ * Closes the group
+ *
+ * \author Johannes Coym
+ **/
 static herr_t
 H5VL_jhdf5_group_close(void *grp, hid_t dxpl_id  __attribute__((unused)), void **req  __attribute__((unused)))
 {
@@ -969,6 +1160,13 @@ H5VL_jhdf5_group_close(void *grp, hid_t dxpl_id  __attribute__((unused)), void *
 	return 1;
 }
 
+/**
+ * Creates a new dataset
+ *
+ * \author Johannes Coym
+ *
+ * \return dset The new dataset 
+ **/
 static void *
 H5VL_jhdf5_dataset_create(void *obj, H5VL_loc_params_t loc_params, const char *name, hid_t dcpl_id, hid_t dapl_id  __attribute__((unused)), hid_t dxpl_id  __attribute__((unused)), void **req  __attribute__((unused)))
 {
@@ -1074,6 +1272,13 @@ H5VL_jhdf5_dataset_create(void *obj, H5VL_loc_params_t loc_params, const char *n
 	return (void *)dset;
 }
 
+/**
+ * Opens a dataset
+ *
+ * \author Johannes Coym
+ *
+ * \return dset The dataset 
+ **/
 static void *
 H5VL_jhdf5_dataset_open(void *obj, H5VL_loc_params_t loc_params, const char *name, hid_t dapl_id  __attribute__((unused)), hid_t dxpl_id  __attribute__((unused)), void **req  __attribute__((unused)))
 {
@@ -1141,6 +1346,11 @@ H5VL_jhdf5_dataset_open(void *obj, H5VL_loc_params_t loc_params, const char *nam
 	return (void *)dset;
 }
 
+/**
+ * Reads the data from the dataset
+ *
+ * \author Johannes Coym
+ **/
 static herr_t
 H5VL_jhdf5_dataset_read(void *dset, hid_t mem_type_id  __attribute__((unused)), hid_t mem_space_id  __attribute__((unused)),
 						 hid_t file_space_id  __attribute__((unused)), hid_t plist_id  __attribute__((unused)), void *buf, void **req  __attribute__((unused)))
@@ -1170,12 +1380,13 @@ H5VL_jhdf5_dataset_read(void *dset, hid_t mem_type_id  __attribute__((unused)), 
 	return 1;
 }
 
-/*-------------------------------------------------------------------------
-* Function:	H5VL_jhdf5_dataset_get
-*
-* Purpose:	Gets certain information about a data set
-*-------------------------------------------------------------------------
-*/
+/**
+ * Provides get Functions of the dataset
+ *
+ * \author Johannes Coym
+ *
+ * \return ret_value The error code
+ **/
 static herr_t
 H5VL_jhdf5_dataset_get(void *dset, H5VL_dataset_get_t get_type, hid_t dxpl_id  __attribute__((unused)), void **req  __attribute__((unused)), va_list arguments)
 {
@@ -1230,6 +1441,11 @@ H5VL_jhdf5_dataset_get(void *dset, H5VL_dataset_get_t get_type, hid_t dxpl_id  _
 	return ret_value;
 }
 
+/**
+ * Writes the data to the dataset
+ *
+ * \author Johannes Coym
+ **/
 static herr_t
 H5VL_jhdf5_dataset_write(void *dset, hid_t mem_type_id  __attribute__((unused)), hid_t mem_space_id  __attribute__((unused)),
 						  hid_t file_space_id  __attribute__((unused)), hid_t plist_id  __attribute__((unused)), const void *buf, void **req  __attribute__((unused)))
@@ -1255,6 +1471,11 @@ H5VL_jhdf5_dataset_write(void *dset, hid_t mem_type_id  __attribute__((unused)),
 	return 1;
 }
 
+/**
+ * Closes the dataset
+ *
+ * \author Johannes Coym
+ **/
 static herr_t
 H5VL_jhdf5_dataset_close(void *dset, hid_t dxpl_id  __attribute__((unused)), void **req  __attribute__((unused)))
 {
@@ -1280,12 +1501,21 @@ H5VL_jhdf5_dataset_close(void *dset, hid_t dxpl_id  __attribute__((unused)), voi
 	return 1;
 }
 
-/* return the library type which should always be H5PL_TYPE_VOL */
+/**
+ * Provides the plugin type
+ *
+ * \author Johannes Coym
+ **/
 H5PL_type_t H5PLget_plugin_type(void)
 {
 	return H5PL_TYPE_VOL;
 }
-/* return a pointer to the plugin structure defining the VOL plugin with all callbacks */
+
+/**
+ * Provides a pointer to the plugin structure
+ *
+ * \author Johannes Coym
+ **/
 const void *H5PLget_plugin_info(void)
 {
 	return &H5VL_log_g;
