@@ -404,7 +404,9 @@ def build (ctx):
 		install_path = '${LIBDIR}'
 	)
 
-	clients = ['object', 'kv', 'item', 'hdf5']
+	clients = ['object', 'kv', 'item']
+	if ctx.env.JULEA_HDF:
+		clients.append('hdf5')
 
 	for client in clients:
 		use_extra = []
@@ -427,11 +429,16 @@ def build (ctx):
 			install_path = '${LIBDIR}'
 		)
 
+	hdf = []
+	if ctx.env.JULEA_HDF:
+		hdf.append('HDF5')
+		hdf.append('lib/julea-hdf5')
+
 	# Tests
 	ctx.program(
 		source = ctx.path.ant_glob('test/**/*.c'),
 		target = 'test/julea-test',
-		use = use_julea_core + ['lib/julea', 'lib/julea-object', 'lib/julea-item', 'HDF5', 'lib/julea-hdf5'],
+		use = use_julea_core + ['lib/julea', 'lib/julea-object', 'lib/julea-item'] + hdf,
 		includes = include_julea_core + ['test'],
 		rpath = get_rpath(ctx),
 		install_path = None
@@ -441,7 +448,7 @@ def build (ctx):
 	ctx.program(
 		source = ctx.path.ant_glob('benchmark/**/*.c'),
 		target = 'benchmark/julea-benchmark',
-		use = use_julea_core + ['lib/julea', 'lib/julea-item', 'HDF5', 'lib/julea-hdf5'],
+		use = use_julea_core + ['lib/julea', 'lib/julea-item'] + hdf,
 		includes = include_julea_core + ['benchmark'],
 		rpath = get_rpath(ctx),
 		install_path = None
