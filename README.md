@@ -35,8 +35,7 @@ $ ./waf.sh configure --debug --sanitize
 $ ./waf.sh build
 ```
 
-To allow the shell to find JULEA's binaries and to set some variables useful for debugging, the environment has to be loaded.
-Alternatively, the binaries can be found in the `build` directory.
+To allow JULEA's binaries and dependencies to be found, the environment has to be loaded.
 
 ```console
 $ . ./scripts/environment.sh
@@ -56,3 +55,16 @@ You can check whether JULEA works by executing the integrated test suite.
 ```console
 $ ./scripts/test.sh
 ```
+
+To get an idea about how to use JULEA from your own application, check out the `example` directory.
+
+```console
+$ cd example
+$ make run
+```
+
+## Citing JULEA
+
+If you want to cite JULEA, please use the following paper:
+
+- [JULEA: A Flexible Storage Framework for HPC](https://link.springer.com/chapter/10.1007/978-3-319-67630-2_51) (Michael Kuhn), In High Performance Computing, Lecture Notes in Computer Science (10524), (Editors: Julian Kunkel, Rio Yokota, Michela Taufer, John Shalf), Springer International Publishing, ISC High Performance 2017, Frankfurt, Germany, ISBN: 978-3-319-67629-6, 2017-11

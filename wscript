@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 # JULEA - Flexible storage framework
-# Copyright (C) 2010-2018 Michael Kuhn
+# Copyright (C) 2010-2019 Michael Kuhn
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Lesser General Public License as published by
@@ -91,19 +91,20 @@ def get_bin (prefixes, bin):
 	return None
 
 def get_pkg_config_path (prefix):
-	env = os.getenv('PKG_CONFIG_PATH')
-	path = None
+	env = os.getenv('PKG_CONFIG_PATH').split(':')
+	path = []
 
-	if prefix:
-		path = '{0}/lib/pkgconfig'.format(prefix)
+	# If no prefix has been specified, fall back to the global directories
+	if not prefix:
+		prefix = '/usr'
+
+	for component in ('lib', 'lib64', 'share'):
+		path.append('{0}/{1}/pkgconfig'.format(prefix, component))
 
 	if env:
-		if path:
-			path = '{0}:{1}'.format(path, env)
-		else:
-			path = env
+		path.extend(env)
 
-	return path
+	return ':'.join(path)
 
 def options (ctx):
 	ctx.load('compiler_c')
@@ -197,6 +198,7 @@ def configure (ctx):
 		package = 'fuse',
 		args = ['--cflags', '--libs'],
 		uselib_store = 'FUSE',
+		pkg_config_path = get_pkg_config_path(None),
 		mandatory = False
 	)
 
@@ -390,12 +392,14 @@ def build (ctx):
 	use_julea_lib = use_julea_core + ['GIO', 'GOBJECT', 'LIBBSON', 'OTF']
 	use_julea_backend = use_julea_core + ['GMODULE']
 
+	include_julea_core = ['include', 'include/core']
+
 	# Library
 	ctx.shlib(
-		source = ctx.path.ant_glob('lib/**/*.c'),
+		source = ctx.path.ant_glob('lib/core/**/*.c'),
 		target = 'lib/julea',
 		use = use_julea_lib,
-		includes = ['include'],
+		includes = include_julea_core,
 		defines = ['JULEA_COMPILATION'],
 		install_path = '${LIBDIR}'
 	)
@@ -414,10 +418,10 @@ def build (ctx):
 			use_extra.append('lib/julea-object')
 
 		ctx.shlib(
-			source = ctx.path.ant_glob('client/{0}/**/*.c'.format(client)),
+			source = ctx.path.ant_glob('lib/{0}/**/*.c'.format(client)),
 			target = 'lib/julea-{0}'.format(client),
 			use = use_julea_lib + ['lib/julea'] + use_extra,
-			includes = ['include'],
+			includes = include_julea_core,
 			defines = ['JULEA_{0}_COMPILATION'.format(client.upper())],
 			rpath = get_rpath(ctx),
 			install_path = '${LIBDIR}'
@@ -427,8 +431,8 @@ def build (ctx):
 	ctx.program(
 		source = ctx.path.ant_glob('test/**/*.c'),
 		target = 'test/julea-test',
-		use = use_julea_core + ['lib/julea', 'lib/julea-item', 'HDF5', 'lib/julea-hdf5'],
-		includes = ['include', 'test'],
+		use = use_julea_core + ['lib/julea', 'lib/julea-object', 'lib/julea-item', 'HDF5', 'lib/julea-hdf5'],
+		includes = include_julea_core + ['test'],
 		rpath = get_rpath(ctx),
 		install_path = None
 	)
@@ -438,7 +442,7 @@ def build (ctx):
 		source = ctx.path.ant_glob('benchmark/**/*.c'),
 		target = 'benchmark/julea-benchmark',
 		use = use_julea_core + ['lib/julea', 'lib/julea-item', 'HDF5', 'lib/julea-hdf5'],
-		includes = ['include', 'benchmark'],
+		includes = include_julea_core + ['benchmark'],
 		rpath = get_rpath(ctx),
 		install_path = None
 	)
@@ -448,7 +452,7 @@ def build (ctx):
 		source = ctx.path.ant_glob('server/*.c'),
 		target = 'server/julea-server',
 		use = use_julea_core + ['lib/julea', 'GIO', 'GMODULE', 'GOBJECT', 'GTHREAD'],
-		includes = ['include'],
+		includes = include_julea_core,
 		rpath = get_rpath(ctx),
 		install_path = '${BINDIR}'
 	)
@@ -470,7 +474,7 @@ def build (ctx):
 			source = ['backend/object/{0}.c'.format(backend)],
 			target = 'backend/object/{0}'.format(backend),
 			use = use_julea_backend + ['lib/julea'] + use_extra,
-			includes = ['include'],
+			includes = include_julea_core,
 			rpath = get_rpath(ctx),
 			install_path = '${LIBDIR}/julea/backend/object'
 		)
@@ -510,7 +514,7 @@ def build (ctx):
 			source = ['backend/kv/{0}.c'.format(backend)],
 			target = 'backend/kv/{0}'.format(backend),
 			use = use_julea_backend + ['lib/julea'] + use_extra,
-			includes = ['include'],
+			includes = include_julea_core,
 			cflags = cflags,
 			rpath = get_rpath(ctx),
 			install_path = '${LIBDIR}/julea/backend/kv'
@@ -521,18 +525,23 @@ def build (ctx):
 		source = ctx.path.ant_glob('cli/*.c'),
 		target = 'cli/julea-cli',
 		use = use_julea_core + ['lib/julea', 'lib/julea-object', 'lib/julea-item'],
-		includes = ['include'],
+		includes = include_julea_core,
 		rpath = get_rpath(ctx),
 		install_path = '${BINDIR}'
 	)
 
 	# Tools
 	for tool in ('config', 'statistics'):
+		use_extra = []
+
+		if tool == 'statistics':
+			use_extra.append('lib/julea')
+
 		ctx.program(
 			source = ['tools/{0}.c'.format(tool)],
 			target = 'tools/julea-{0}'.format(tool),
-			use = use_julea_core + ['lib/julea', 'GIO', 'GOBJECT'],
-			includes = ['include'],
+			use = use_julea_core + ['GIO', 'GOBJECT'] + use_extra,
+			includes = include_julea_core,
 			rpath = get_rpath(ctx),
 			install_path = '${BINDIR}'
 		)
@@ -543,21 +552,24 @@ def build (ctx):
 			source = ctx.path.ant_glob('fuse/*.c'),
 			target = 'fuse/julea-fuse',
 			use = use_julea_core + ['lib/julea', 'lib/julea-kv', 'lib/julea-object', 'FUSE'],
-			includes = ['include'],
+			includes = include_julea_core,
 			rpath = get_rpath(ctx),
 			install_path = '${BINDIR}'
 		)
 
 	# pkg-config
-	ctx(
-		features = 'subst',
-		source = 'pkg-config/julea.pc.in',
-		target = 'pkg-config/julea.pc',
-		install_path = '${LIBDIR}/pkgconfig',
-		APPNAME = APPNAME,
-		VERSION = VERSION,
-		INCLUDEDIR = Utils.subst_vars('${INCLUDEDIR}', ctx.env),
-		LIBDIR = Utils.subst_vars('${LIBDIR}', ctx.env),
-		GLIB_VERSION = glib_version,
-		LIBBSON_VERSION = libbson_version
-	)
+	for lib in ('', 'object', 'kv', 'item'):
+		suffix = '-{0}'.format(lib) if lib else ''
+
+		ctx(
+			features = 'subst',
+			source = 'pkg-config/julea{0}.pc.in'.format(suffix),
+			target = 'pkg-config/julea{0}.pc'.format(suffix),
+			install_path = '${LIBDIR}/pkgconfig',
+			APPNAME = APPNAME,
+			VERSION = VERSION,
+			INCLUDEDIR = Utils.subst_vars('${INCLUDEDIR}', ctx.env),
+			LIBDIR = Utils.subst_vars('${LIBDIR}', ctx.env),
+			GLIB_VERSION = glib_version,
+			LIBBSON_VERSION = libbson_version
+		)
