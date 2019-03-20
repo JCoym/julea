@@ -1,4 +1,3 @@
-#include <hdf5.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -27,6 +26,43 @@
 	exit(1);
 
 #define COUNT_MAX 2147479552
+
+struct JHF_t;
+
+typedef struct JHF_t
+{
+	char *name;
+} JHF_t; /* structure for file*/
+
+typedef struct JHG_t
+{
+	char *location;
+	char *name;
+} JHG_t; /* structure for group*/
+
+typedef struct JHD_t
+{
+	char *location;
+	char *name;
+	size_t data_size;
+	JDistribution *distribution;
+	JDistributedObject *object;
+	JKV *kv;
+} JHD_t; /* structure for dataset*/
+
+typedef struct JHA_t
+{
+	char *location;
+	char *name;
+	size_t data_size;
+	JKV *kv;
+	JKV *ts;
+} JHA_t; /*structure for attribute*/
+
+typedef struct h5julea_fapl_t
+{
+	char *name;
+} h5julea_fapl_t;
 
 static herr_t H5VL_jhdf5_fapl_free(void *info);
 static void *H5VL_jhdf5_fapl_copy(const void *info);
@@ -60,6 +96,20 @@ static void *H5VL_jhdf5_group_create(void *obj, H5VL_loc_params_t loc_params, co
 static void *H5VL_jhdf5_group_open(void *obj, H5VL_loc_params_t loc_params, const char *name, hid_t gapl_id, hid_t dxpl_id, void **req);
 static herr_t H5VL_jhdf5_group_close(void *grp, hid_t dxpl_id, void **req);
 
+char *j_hdf5_encode_type(const char *, hid_t *, hid_t, size_t *);
+char *j_hdf5_encode_space(const char *, hid_t *, hid_t, size_t *);
+
+bson_t *j_hdf5_serialize(const void *, size_t);
+bson_t *j_hdf5_serialize_ts (const void *, size_t, const void *, size_t);
+bson_t *j_hdf5_serialize_dataset(const void *, size_t, const void *, size_t, size_t, JDistribution *);
+
+void j_hdf5_deserialize(const bson_t *, void *, size_t);
+void *j_hdf5_deserialize_type (const bson_t*);
+void *j_hdf5_deserialize_space (const bson_t*);
+void j_hdf5_deserialize_dataset(const bson_t *, JHD_t *, size_t *);
+void j_hdf5_deserialize_meta(const bson_t *, size_t *);
+
+char *create_path(const char *, char *);
 
 hid_t native_plugin_id = -1;
 
