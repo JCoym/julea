@@ -433,6 +433,8 @@ def build (ctx):
 	if ctx.env.JULEA_HDF:
 		hdf.append('HDF5')
 		hdf.append('lib/julea-hdf5')
+	else:
+		check_and_add_cflags(ctx, '-D NOHDF5')
 
 	# Tests
 	ctx.program(

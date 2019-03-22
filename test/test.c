@@ -53,7 +53,11 @@ main (int argc, char** argv)
 	test_item();
 	test_uri();
 
+	#ifndef NOHDF5
+
 	test_hdf();
+
+	#endif
 
 	ret = g_test_run();
 

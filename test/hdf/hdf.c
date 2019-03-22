@@ -20,6 +20,8 @@
  * \file
  **/
 
+#ifndef NOHDF5
+
 #include <assert.h>
 #include <hdf5.h>
 #include <stdio.h>
@@ -265,3 +267,5 @@ void test_hdf(void) {
     g_test_add_func("/hdf/hdf/write", test_hdf_write);
     g_test_add_func("/hdf/hdf/read", test_hdf_read);
 }
+
+#endif

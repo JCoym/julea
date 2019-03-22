@@ -20,6 +20,8 @@
  * \file
  **/
 
+#ifndef NOHDF5
+
 #include <assert.h>
 #include <hdf5.h>
 #include <stdio.h>
@@ -426,3 +428,5 @@ void benchmark_hdf(void) {
     j_benchmark_run("/hdf/hdf/write_stock", benchmark_hdf_write_stock);
     j_benchmark_run("/hdf/hdf/read_stock", benchmark_hdf_read_stock);
 }
+
+#endif
