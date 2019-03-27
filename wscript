@@ -358,6 +358,9 @@ def configure (ctx):
 	if ctx.options.debug:
 		ctx.define('JULEA_DEBUG', 1)
 
+	if not ctx.env.JULEA_HDF:
+		check_and_add_cflags(ctx, '-D NOHDF5')
+
 	backend_paths = []
 
 	if ctx.options.debug:
@@ -433,12 +436,15 @@ def build (ctx):
 	if ctx.env.JULEA_HDF:
 		hdf.append('HDF5')
 		hdf.append('lib/julea-hdf5')
+		test_source = ctx.path.ant_glob('test/**/*.c')
+		bench_source = ctx.path.ant_glob('benchmark/**/*.c')
 	else:
-		check_and_add_cflags(ctx, '-D NOHDF5')
+		test_source = ctx.path.ant_glob('test/**/*.c', excl=['test/hdf/hdf.c'], src=True, dir=False)
+		bench_source = ctx.path.ant_glob('benchmark/**/*.c', excl=['benchmark/hdf/hdf.c'], src=True, dir=False)
 
 	# Tests
 	ctx.program(
-		source = ctx.path.ant_glob('test/**/*.c'),
+		source = test_source,
 		target = 'test/julea-test',
 		use = use_julea_core + ['lib/julea', 'lib/julea-object', 'lib/julea-item'] + hdf,
 		includes = include_julea_core + ['test'],
@@ -448,7 +454,7 @@ def build (ctx):
 
 	# Benchmark
 	ctx.program(
-		source = ctx.path.ant_glob('benchmark/**/*.c'),
+		source = bench_source,
 		target = 'benchmark/julea-benchmark',
 		use = use_julea_core + ['lib/julea', 'lib/julea-item'] + hdf,
 		includes = include_julea_core + ['benchmark'],
