@@ -85,10 +85,8 @@ void julea_bluestore_create(const char* name) {
     const uint64_t pool = 4373;
     ghobject_t obj = make_object(name, pool);
     ObjectStore::Transaction t;
-    bufferlist bl;
-    bl.append("");
     t.create_collection(cid, 0);
-    t.write(cid, obj, 0, 0, bl);
+    t.touch(cid, obj);
     queue_transaction(store, ch, std::move(t));
 }
 
@@ -113,7 +111,7 @@ int julea_bluestore_write(const char* name, uint64_t offset, const char* data, u
 }
 
 int julea_bluestore_read(const char* name, uint64_t offset, char* data_read, uint64_t length) {
-    onst uint64_t pool = 4373;
+    const uint64_t pool = 4373;
     ghobject_t obj = make_object(name, pool);
     bufferlist readback;
     int ret = store->read(ch, obj, offset, length, readback);
@@ -121,6 +119,9 @@ int julea_bluestore_read(const char* name, uint64_t offset, char* data_read, uin
     return ret;
 }
 
-void julea_bluestore_status() {
-    // TODO
+int julea_bluestore_status(const char* name, struct stat* st) {
+    const uint64_t pool = 4373;
+    ghobject_t obj = make_object(name, pool);
+    struct stat st;
+    return store->stat(ch, obj, &st);
 }
