@@ -28,7 +28,7 @@ using namespace std::placeholders;
 
 public:
     ObjectStore *store;
-    BlueStore* bstore
+    BlueStore *bstore;
     coll_t cid;
     CollectionHandle ch;
     auto cct;
@@ -41,7 +41,7 @@ ghobject_t make_object(const char* name, int64_t pool) {
 
 // BlueStore operations
 
-void julea_bluestore_init(const string& path) {
+void julea_bluestore_init(const char* path) {
     int poolid = 4373;
     cct = global_init(NULL, NULL, CEPH_ENTITY_TYPE_CLIENT, CODE_ENVIRONMENT_UTILITY, NULL);
     store = ObjectStore(cct, path);
@@ -51,7 +51,7 @@ void julea_bluestore_init(const string& path) {
     ch = bstore->create_new_collection(cid);
 }
 
-void julea_bluestore_mount(const string& path) {
+void julea_bluestore_mount(const char* path) {
     int poolid = 4373;
 
     if (cct == NULL) {
@@ -90,7 +90,7 @@ void julea_bluestore_create(const char* name) {
     queue_transaction(store, ch, std::move(t));
 }
 
-void julea_bluestore_delete() {
+void julea_bluestore_delete(const char* name) {
     const uint64_t pool = 4373;
     ghobject_t obj = make_object(name, pool);
     ObjectStore::Transaction t;
