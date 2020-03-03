@@ -26,12 +26,10 @@
 
 using namespace std::placeholders;
 
-public:
-    ObjectStore *store;
-    BlueStore *bstore;
-    coll_t cid;
-    CollectionHandle ch;
-    auto cct;
+boost::scoped_ptr<ObjectStore> store;
+BlueStore *bstore;
+coll_t cid;
+ObjectStore::CollectionHandle ch;
 
 ghobject_t make_object(const char* name, int64_t pool) {
     sobject_t soid{name, CEPH_NOSNAP};
@@ -39,13 +37,25 @@ ghobject_t make_object(const char* name, int64_t pool) {
     return ghobject_t{hobject_t{soid, "", hash, pool, ""}};
 }
 
+template <typename T>
+int queue_transaction(T &store, ObjectStore::CollectionHandle ch, ObjectStore::Transaction &&t) {
+  if (rand() % 2) {
+    ObjectStore::Transaction t2;
+    t2.append(t);
+    return store->queue_transaction(ch, std::move(t2));
+  } else {
+    return store->queue_transaction(ch, std::move(t));
+  }
+}
+
 // BlueStore operations
 
 void julea_bluestore_init(const char* path) {
     int poolid = 4373;
-    cct = global_init(NULL, NULL, CEPH_ENTITY_TYPE_CLIENT, CODE_ENVIRONMENT_UTILITY, NULL);
-    store = ObjectStore(cct, path);
-    store.create(cct, "bluestore", path, "", NULL);
+    vector<const char*> args;
+    store.reset(ObjectStore::create(g_ceph_context, "bluestore", path, NULL));
+    store->mkfs();
+    store->mount();
     bstore = dynamic_cast<BlueStore*> (store.get());
     cid = coll_t(spg_t(pg_t(0, poolid), shard_id_t::NO_SHARD));
     ch = bstore->create_new_collection(cid);
@@ -53,28 +63,17 @@ void julea_bluestore_init(const char* path) {
 
 void julea_bluestore_mount(const char* path) {
     int poolid = 4373;
-
-    if (cct == NULL) {
-        cct = global_init(NULL, NULL, CEPH_ENTITY_TYPE_CLIENT, CODE_ENVIRONMENT_UTILITY, NULL);
-    }
-
-    if (store == NULL) {
-        store = ObjectStore(cct, path);
-    }
-
-    if (bstore == NULL) {
-        bstore = dynamic_cast<BlueStore*> (store.get());
-    }
-    else {
-        bstore->mount();
-    }
+    
+    store.reset(ObjectStore::create(g_ceph_context, "bluestore", path, NULL));
+    bstore = dynamic_cast<BlueStore*> (store.get());
+    bstore->mount();
 
     cid = coll_t(spg_t(pg_t(0, poolid), shard_id_t::NO_SHARD));
     ch = bstore->open_collection(cid);
 }
 
 void julea_bluestore_umount() {
-    if (cct != NULL && bstore != NULL){
+    if (bstore != NULL){
         bstore->umount();
     }
 }
@@ -115,13 +114,12 @@ int julea_bluestore_read(const char* name, uint64_t offset, char* data_read, uin
     ghobject_t obj = make_object(name, pool);
     bufferlist readback;
     int ret = store->read(ch, obj, offset, length, readback);
-    bl.copy_out(0, length, data_read)
+    data_read = readback.c_str();
     return ret;
 }
 
 int julea_bluestore_status(const char* name, struct stat* st) {
     const uint64_t pool = 4373;
     ghobject_t obj = make_object(name, pool);
-    struct stat st;
-    return store->stat(ch, obj, &st);
+    return store->stat(ch, obj, st);
 }
