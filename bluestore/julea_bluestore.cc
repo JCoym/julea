@@ -48,6 +48,10 @@ int queue_transaction(T &store, ObjectStore::CollectionHandle ch, ObjectStore::T
   }
 }
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // BlueStore operations
 
 void julea_bluestore_init(const char* path) {
@@ -123,3 +127,7 @@ int julea_bluestore_status(const char* name, struct stat* st) {
     ghobject_t obj = make_object(name, pool);
     return store->stat(ch, obj, st);
 }
+
+#ifdef __cplusplus
+}
+#endif
