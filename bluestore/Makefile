@@ -1,7 +1,7 @@
 CC = g++
 
 # define any compile-time flags
-CFLAGS = -std=c++17
+CFLAGS = -fPIC -std=c++17 -shared
 
 # define any directories containing header files other than /usr/include
 #
@@ -15,25 +15,13 @@ LFLAGS = -L../dependencies/ceph/build/lib -L../dependencies/ceph/build/src/rocks
 # define any libraries to link into executable:
 #   if I want to link in libraries (libx.so or libx.a) I use the -llibname 
 #   option, something like (this will link in libmylib.so and libm.so:
-LIBS = -lceph-common -lbluefs -lcommon -lkv -lpthread -lrocksdb -lz -lceph_lz4 -llz4 -los -lcrypto -ldl
-
-# define the C source files
-SRCS = julea_bluestore.cc
-
-OBJS = $(SRCS:.cc=.o)
-
-# define the executable file 
-MAIN = julea_bluestore
+LIBS = -lceph-common -lbluefs -lcommon -lpthread -lz -lceph_lz4 -llz4 -los -lcrypto -ldl -lceph_snappy -lsnappy -lcephfs -lkv -lleveldb -lrocksdb -lheap_profiler -laio -ltcmalloc
 
 .PHONY: clean
 
-all:    $(MAIN)
-
-$(MAIN): $(OBJS) 
-		$(CC) $(CFLAGS) -fPIC $(INCLUDES) -o $(MAIN) $(OBJS) $(LFLAGS) $(LIBS)
-
-.cc.o:
-		$(CC) $(CFLAGS) $(INCLUDES) -c $<  -o $@
+all:    
+		$(CC) $(CFLAGS) $(INCLUDES) -c julea_bluestore.cc $(LFLAGS) $(LIBS)
+		$(CC) $(CFLAGS) $(INCLUDES) julea_bluestore.o -o libjulea_bluestore.so $(LFLAGS) $(LIBS)
 
 clean:
 		$(RM) *.o *~ $(MAIN)
