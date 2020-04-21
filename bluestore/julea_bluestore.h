@@ -3,6 +3,9 @@ extern "C" {
 #endif
 
 #include <stdint.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 void julea_bluestore_init(const char*);
 

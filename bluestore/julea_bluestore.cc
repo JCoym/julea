@@ -57,7 +57,8 @@ extern "C" {
 void julea_bluestore_init(const char* path) {
     int poolid = 4373;
     vector<const char*> args;
-    store.reset(ObjectStore::create(g_ceph_context, "bluestore", path, NULL));
+    global_init(NULL, args, CEPH_ENTITY_TYPE_CLIENT, CODE_ENVIRONMENT_UTILITY, CINIT_FLAG_NO_MON_CONFIG);
+    store.reset(ObjectStore::create(g_ceph_context, string("bluestore"), string(path), string("store_temp_journal")));
     store->mkfs();
     store->mount();
     bstore = dynamic_cast<BlueStore*> (store.get());
@@ -67,7 +68,7 @@ void julea_bluestore_init(const char* path) {
 
 void julea_bluestore_mount(const char* path) {
     int poolid = 4373;
-    
+    std::string path2(path);
     store.reset(ObjectStore::create(g_ceph_context, "bluestore", path, NULL));
     bstore = dynamic_cast<BlueStore*> (store.get());
     bstore->mount();
