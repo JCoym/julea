@@ -57,7 +57,8 @@ extern "C" {
 void julea_bluestore_init(const char* path) {
     int poolid = 4373;
     vector<const char*> args;
-    global_init(NULL, args, CEPH_ENTITY_TYPE_CLIENT, CODE_ENVIRONMENT_UTILITY, CINIT_FLAG_NO_MON_CONFIG);
+    auto cct = global_init(nullptr, args, CEPH_ENTITY_TYPE_OSD, CODE_ENVIRONMENT_UTILITY, CINIT_FLAG_NO_MON_CONFIG);
+    common_init_finish(g_ceph_context);
     store.reset(ObjectStore::create(g_ceph_context, string("bluestore"), string(path), string("store_temp_journal")));
     store->mkfs();
     store->mount();
