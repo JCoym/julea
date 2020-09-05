@@ -5,10 +5,6 @@
 #include <iostream>
 #include <time.h>
 #include <sys/mount.h>
-#include <boost/scoped_ptr.hpp>
-#include <boost/random/mersenne_twister.hpp>
-#include <boost/random/uniform_int.hpp>
-#include <boost/random/binomial_distribution.hpp>
 
 #include "os/ObjectStore.h"
 #include "os/bluestore/BlueStore.h"
@@ -78,11 +74,11 @@ void julea_bluestore_init(const char* path) {
     auto cct = global_init(nullptr, args, CEPH_ENTITY_TYPE_OSD, CODE_ENVIRONMENT_UTILITY, CINIT_FLAG_NO_MON_CONFIG);
     common_init_finish(g_ceph_context);
     store.reset(ObjectStore::create(g_ceph_context, string("bluestore"), string(path), string("store_temp_journal")));
+    bstore = dynamic_cast<BlueStore*> (store.get());
     store->mkfs();
     store->mount();
-    bstore = dynamic_cast<BlueStore*> (store.get());
 
-    cid = coll_t(spg_t(pg_t(0, poolid), shard_id_t::NO_SHARD));
+    cid = coll_t(spg_t());
     ch = bstore->create_new_collection(cid);
     {
         BlueStore::Transaction t;
@@ -100,14 +96,8 @@ void julea_bluestore_mount(const char* path) {
     bstore = dynamic_cast<BlueStore*> (store.get());
     bstore->mount();
 
-    cid = coll_t(spg_t(pg_t(0, poolid), shard_id_t::NO_SHARD));
+    cid = coll_t(spg_t());
     ch = bstore->open_collection(cid);
-    /**ch = bstore->create_new_collection(cid);
-    {
-        BlueStore::Transaction t;
-        t.create_collection(cid, 0);
-        bstore->queue_transaction(ch, std::move(t));
-    }**/
 }
 
 void julea_bluestore_umount() {
@@ -123,7 +113,8 @@ void julea_bluestore_create(const char* name) {
     ghobject_t obj = make_object(name, pool);
     ObjectStore::Transaction t;
     t.touch(cid, obj);
-    int r = queue_transaction(store, ch, std::move(t));
+    int r = bstore->queue_transaction(ch, std::move(t));
+    ceph_assert(r == 0);
 }
 
 void julea_bluestore_delete(const char* name) {
@@ -131,7 +122,8 @@ void julea_bluestore_delete(const char* name) {
     ghobject_t obj = make_object(name, pool);
     ObjectStore::Transaction t;
     t.remove(cid, obj);
-    queue_transaction(store, ch, std::move(t));
+    int r = queue_transaction(store, ch, std::move(t));
+    ceph_assert(r == 0);
 }
 
 int julea_bluestore_write(const char* name, uint64_t offset, const char* data, uint64_t length) {
@@ -139,17 +131,19 @@ int julea_bluestore_write(const char* name, uint64_t offset, const char* data, u
     ghobject_t obj = make_object(name, pool);
     ObjectStore::Transaction t;
     bufferlist bl;
-    bl.append(data);
+    bl.append(string(data));
     t.write(cid, obj, offset, bl.length(), bl);
-    return queue_transaction(store, ch, std::move(t));
+    queue_transaction(store, ch, std::move(t));
+    return bl.length();
 }
 
-int julea_bluestore_read(const char* name, uint64_t offset, char* data_read, uint64_t length) {
+int julea_bluestore_read(const char* name, uint64_t offset, char** data_read, uint64_t length) {
     const uint64_t pool = 4373;
     ghobject_t obj = make_object(name, pool);
     bufferlist readback;
     int ret = store->read(ch, obj, offset, length, readback);
-    data_read = readback.c_str();
+    *data_read = readback.c_str();
+    printf(readback.c_str());
     return ret;
 }
 
