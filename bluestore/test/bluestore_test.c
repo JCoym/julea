@@ -21,6 +21,7 @@ main(int argc, char** argv)
     int br = julea_bluestore_read("test_object", 0, &readback, 20);
     printf("%d \n", br);
     printf(readback);
+    julea_bluestore_delete("test_object");
     julea_bluestore_umount();
     free(readback);
 }

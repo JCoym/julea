@@ -2,24 +2,10 @@
 #include <glob.h>
 #include <stdio.h>
 #include <string.h>
-#include <iostream>
-#include <time.h>
-#include <sys/mount.h>
 
 #include "os/ObjectStore.h"
 #include "os/bluestore/BlueStore.h"
-#include "os/bluestore/BlueFS.h"
-#include "include/Context.h"
-#include "common/ceph_argparse.h"
-#include "common/admin_socket.h"
 #include "global/global_init.h"
-#include "common/ceph_mutex.h"
-#include "common/Cond.h"
-#include "common/errno.h"
-#include "include/stringify.h"
-#include "include/coredumpctl.h"
-
-#include "include/unordered_map.h"
 
 using namespace std::placeholders;
 
@@ -71,9 +57,9 @@ void init_bs_folder(const char* folder, const char* blkdev) {
 void julea_bluestore_init(const char* path) {
     int poolid = 4373;
     vector<const char*> args;
-    auto cct = global_init(nullptr, args, CEPH_ENTITY_TYPE_OSD, CODE_ENVIRONMENT_UTILITY, CINIT_FLAG_NO_MON_CONFIG);
+    auto cct = global_init(nullptr, args, CEPH_ENTITY_TYPE_CLIENT, CODE_ENVIRONMENT_UTILITY, CINIT_FLAG_NO_MON_CONFIG);
     common_init_finish(g_ceph_context);
-    store.reset(ObjectStore::create(g_ceph_context, string("bluestore"), string(path), string("store_temp_journal")));
+    store.reset(ObjectStore::create(g_ceph_context, string("bluestore"), string(path), g_conf()->osd_journal));
     bstore = dynamic_cast<BlueStore*> (store.get());
     store->mkfs();
     store->mount();
@@ -90,9 +76,9 @@ void julea_bluestore_init(const char* path) {
 void julea_bluestore_mount(const char* path) {
     int poolid = 4373;
     vector<const char*> args;
-    auto cct = global_init(nullptr, args, CEPH_ENTITY_TYPE_OSD, CODE_ENVIRONMENT_UTILITY, CINIT_FLAG_NO_MON_CONFIG);
+    auto cct = global_init(nullptr, args, CEPH_ENTITY_TYPE_CLIENT, CODE_ENVIRONMENT_UTILITY, CINIT_FLAG_NO_MON_CONFIG);
     common_init_finish(g_ceph_context);
-    store.reset(ObjectStore::create(g_ceph_context, string("bluestore"), string(path), string("store_temp_journal")));
+    store.reset(ObjectStore::create(g_ceph_context, string("bluestore"), string(path), g_conf()->osd_journal));
     bstore = dynamic_cast<BlueStore*> (store.get());
     bstore->mount();
 
@@ -102,6 +88,7 @@ void julea_bluestore_mount(const char* path) {
 
 void julea_bluestore_umount() {
     if (bstore != NULL){
+        ch.reset();
         bstore->umount();
     }
 }
