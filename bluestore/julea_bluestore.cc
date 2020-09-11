@@ -1,5 +1,3 @@
-#include <dirent.h>
-#include <glob.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -35,31 +33,14 @@ int queue_transaction(T &store, ObjectStore::CollectionHandle ch, ObjectStore::T
 extern "C" {
 #endif
 
-void init_bs_folder(const char* folder, const char* blkdev) {
-    printf("check");
-    DIR* dir = opendir(folder);
-    printf("check");
-    if (dir) {
-        closedir(dir);
-    }
-    else {
-        mkdir(folder, 0777);
-    }
-    printf("check");
-    char filename[] = "/block";
-    char* linkfile = strcat(filename, folder);
-    printf(linkfile);
-    symlink(blkdev, linkfile);
-}
-
 // BlueStore operations
 
 void julea_bluestore_init(const char* path) {
     int poolid = 4373;
     vector<const char*> args;
-    auto cct = global_init(nullptr, args, CEPH_ENTITY_TYPE_CLIENT, CODE_ENVIRONMENT_UTILITY, CINIT_FLAG_NO_MON_CONFIG);
+    auto cct = global_init(nullptr, args, CEPH_ENTITY_TYPE_OSD, CODE_ENVIRONMENT_UTILITY, CINIT_FLAG_NO_MON_CONFIG);
     common_init_finish(g_ceph_context);
-    store.reset(ObjectStore::create(g_ceph_context, string("bluestore"), string(path), g_conf()->osd_journal));
+    store.reset(ObjectStore::create(g_ceph_context, string("bluestore"), string(path), string("")));
     bstore = dynamic_cast<BlueStore*> (store.get());
     store->mkfs();
     store->mount();
@@ -76,9 +57,9 @@ void julea_bluestore_init(const char* path) {
 void julea_bluestore_mount(const char* path) {
     int poolid = 4373;
     vector<const char*> args;
-    auto cct = global_init(nullptr, args, CEPH_ENTITY_TYPE_CLIENT, CODE_ENVIRONMENT_UTILITY, CINIT_FLAG_NO_MON_CONFIG);
+    auto cct = global_init(nullptr, args, CEPH_ENTITY_TYPE_OSD, CODE_ENVIRONMENT_UTILITY, CINIT_FLAG_NO_MON_CONFIG);
     common_init_finish(g_ceph_context);
-    store.reset(ObjectStore::create(g_ceph_context, string("bluestore"), string(path), g_conf()->osd_journal));
+    store.reset(ObjectStore::create(g_ceph_context, string("bluestore"), string(path), string("")));
     bstore = dynamic_cast<BlueStore*> (store.get());
     bstore->mount();
 
