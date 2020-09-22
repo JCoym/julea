@@ -27,7 +27,7 @@
 #include <julea_bluestore.h>
 
 static gboolean
-backend_create(gchar const* namespace, gchar const* path, gpointer* data)
+backend_create(gpointer backend_data, gchar const* namespace, gchar const* path, gpointer* data, gpointer backend_object)
 {
 	gchar* full_path;
 
@@ -37,13 +37,13 @@ backend_create(gchar const* namespace, gchar const* path, gpointer* data)
     julea_bluestore_create(full_path);
 	j_trace_file_end(full_path, J_TRACE_FILE_CREATE, 0, 0);
 
-	*data = full_path;
+	*backend_object = full_path;
 
 	return TRUE;
 }
 
 static gboolean
-backend_open(gchar const* namespace, gchar const* path, gpointer* data)
+backend_open(gpointer backend_data, gchar const* namespace, gchar const* path, gpointer* data, gpointer backend_object)
 {
 	gchar* full_path;
 
@@ -52,15 +52,15 @@ backend_open(gchar const* namespace, gchar const* path, gpointer* data)
 	j_trace_file_begin(full_path, J_TRACE_FILE_OPEN);
 	j_trace_file_end(full_path, J_TRACE_FILE_OPEN, 0, 0);
 
-	*data = full_path;
+	*backend_object = full_path;
 
 	return TRUE;
 }
 
 static gboolean
-backend_delete(gpointer data)
+backend_delete(gpointer backend_data, gpointer backend_object)
 {
-	gchar* full_path = data;
+	gchar* full_path = backend_object;
 
 	j_trace_file_begin(full_path, J_TRACE_FILE_DELETE);
     julea_bluestore_delete(full_path);
@@ -72,9 +72,9 @@ backend_delete(gpointer data)
 }
 
 static gboolean
-backend_close(gpointer data)
+backend_close(gpointer backend_data, gpointer backend_object)
 {
-	gchar* full_path = data;
+	gchar* full_path = backend_object;
 
 	j_trace_file_begin(full_path, J_TRACE_FILE_CLOSE);
 	j_trace_file_end(full_path, J_TRACE_FILE_CLOSE, 0, 0);
@@ -85,9 +85,9 @@ backend_close(gpointer data)
 }
 
 static gboolean
-backend_status(gpointer data, gint64* modification_time, guint64* size)
+backend_status(gpointer backend_data, gpointer backend_object, gint64* modification_time, guint64* size)
 {
-	gchar const* full_path = data;
+	gchar const* full_path = backend_object;
     struct stat buf;
 
 	j_trace_file_begin(full_path, J_TRACE_FILE_STATUS);
@@ -112,9 +112,9 @@ backend_status(gpointer data, gint64* modification_time, guint64* size)
 }
 
 static gboolean
-backend_sync(gpointer data)
+backend_sync(gpointer backend_data, gpointer backend_object)
 {
-	gchar const* full_path = data;
+	gchar const* full_path = backend_object;
 
 	j_trace_file_begin(full_path, J_TRACE_FILE_SYNC);
 	j_trace_file_end(full_path, J_TRACE_FILE_SYNC, 0, 0);
@@ -123,9 +123,9 @@ backend_sync(gpointer data)
 }
 
 static gboolean
-backend_read(gpointer data, gpointer buffer, guint64 length, guint64 offset, guint64* bytes_read)
+backend_read(gpointer backend_data, gpointer backend_object, gpointer buffer, guint64 length, guint64 offset, guint64* bytes_read)
 {
-	gchar const* full_path = data;
+	gchar const* full_path = backend_object;
     gsize br = 0;
 
 	(void)buffer;
@@ -143,9 +143,9 @@ backend_read(gpointer data, gpointer buffer, guint64 length, guint64 offset, gui
 }
 
 static gboolean
-backend_write(gpointer data, gconstpointer buffer, guint64 length, guint64 offset, guint64* bytes_written)
+backend_write(gpointer backend_data, gpointer backend_object, gconstpointer buffer, guint64 length, guint64 offset, guint64* bytes_written)
 {
-	gchar const* full_path = data;
+	gchar const* full_path = backend_object;
     gsize bw = 0;
 
 	(void)buffer;
@@ -163,19 +163,31 @@ backend_write(gpointer data, gconstpointer buffer, guint64 length, guint64 offse
 }
 
 static gboolean
-backend_init(gchar const* path)
+backend_init(gchar const* path, gpointer* backend_data)
 {
     //TODO: use julea_bluestore_mount when bluestore exists
 
+	JBackendData* bd;
+
+	bd = g_slice_new(JBackendData);
+	bd->path = g_strdup(path);
+
 	julea_bluestore_init(path);
+
+	*backend_data = bd;
 
 	return TRUE;
 }
 
 static void
-backend_fini(void)
+backend_fini(gpointer backend_data)
 {
+	JBackendData* bd = backend_data;
+
     julea_bluestore_umount();
+
+	g_free(bd->path);
+	g_slice_free(JBackendData, bd);
 }
 
 static JBackend bluestore_backend = {
