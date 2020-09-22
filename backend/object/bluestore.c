@@ -115,7 +115,7 @@ backend_status(gpointer backend_data, gpointer backend_object, gint64* modificat
 		*modification_time = buf.st_mtime * G_USEC_PER_SEC;
 
 #ifdef HAVE_STMTIM_TVNSEC
-			*modification_time += buf.st_mtim.tv_nsec / 1000;
+		*modification_time += buf.st_mtim.tv_nsec / 1000;
 #endif
 	}
 
@@ -146,7 +146,6 @@ backend_read(gpointer backend_data, gpointer backend_object, gpointer buffer, gu
 	gchar const* full_path = backend_object;
 	gsize br = 0;
 	(void)backend_data;
-
 
 	j_trace_file_begin(full_path, J_TRACE_FILE_READ);
 	br = julea_bluestore_read(full_path, offset, (char**)&buffer, length);
