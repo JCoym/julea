@@ -1,3 +1,8 @@
+# Bluestore
+bluestore/**/*.o
+bluestore/**/*.so
+bluestore/test/bluestore_test
+
 # Dependencies
 dependencies/
 

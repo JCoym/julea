@@ -13,7 +13,7 @@ void julea_bluestore_init(const char*);
 
 void julea_bluestore_mount(const char*);
 
-void julea_bluestore_umount();
+void julea_bluestore_umount(void);
 
 void julea_bluestore_create(const char*);
 
