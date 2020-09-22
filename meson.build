@@ -234,6 +234,11 @@ if not rocksdb_dep.found()
 	)
 endif
 
+bluestore_dep = cc.find_library('julea_bluestore',
+    dirs : meson.current_source_dir() + '/bluestore',
+	required: false,
+)
+
 # Compiler checks
 
 stmtim_tvnsec_check = cc.has_member('struct stat', 'st_mtim.tv_nsec',
@@ -515,6 +520,10 @@ if rados_dep.found()
 	julea_backends += 'object/rados'
 endif
 
+if bluestore_dep.found()
+	julea_backends += 'object/bluestore'
+endif
+
 if leveldb_dep.found()
 	julea_backends += 'kv/leveldb'
 endif
@@ -546,9 +555,13 @@ foreach backend: julea_backends
 
 	extra_args = []
 	extra_deps = []
+	extra_incs = []
 
 	if backend == 'object/rados'
 		extra_deps += rados_dep
+	elif backend == 'object/bluestore'
+		extra_deps += bluestore_dep
+		extra_incs += include_directories('bluestore')
 	elif backend == 'kv/leveldb'
 		# leveldb bug (will be fixed in 1.23)
 		# https://github.com/google/leveldb/pull/365
@@ -585,7 +598,7 @@ foreach backend: julea_backends
 
 	lib = shared_library('@0@-@1@'.format(backend_type, backend_name), files('backend/@0@.c'.format(backend)),
 		dependencies: common_deps + [julea_dep] + extra_deps,
-		include_directories: julea_incs,
+		include_directories: [julea_incs] + extra_incs,
 		c_args: extra_args,
 		#soversion: meson.project_version().split('.')[0],
 		#version: meson.project_version(),
