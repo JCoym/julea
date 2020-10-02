@@ -29,4 +29,5 @@ main(int argc, char** argv)
     julea_bluestore_delete(store, coll, "test_object");
 
     julea_bluestore_umount(store, coll);
+    free(readback);
 }
