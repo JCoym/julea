@@ -18,7 +18,7 @@ void *julea_bluestore_create_collection(void*);
 
 void *julea_bluestore_open_collection(void*);
 
-void julea_bluestore_umount(void*, void*);
+int julea_bluestore_umount(void*, void*);
 
 void julea_bluestore_create(void*, void*, const char*);
 

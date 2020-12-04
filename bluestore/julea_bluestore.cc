@@ -5,6 +5,9 @@
 #include "os/bluestore/BlueStore.h"
 #include "global/global_init.h"
 
+#include "common/strtol.h"
+#include "common/ceph_argparse.h"
+
 boost::intrusive_ptr<ceph::common::CephContext> cct;
 
 typedef struct BSColl
@@ -19,7 +22,7 @@ ghobject_t make_object(const char* name, int64_t pool) {
     uint32_t hash = std::hash<sobject_t>{}(soid);
     return ghobject_t{hobject_t{soid, "", hash, pool, ""}};
 }
-
+/*
 template <typename T>
 int queue_transaction(T &store, ObjectStore::CollectionHandle ch, ObjectStore::Transaction &&t) {
   if (rand() % 2) {
@@ -30,7 +33,7 @@ int queue_transaction(T &store, ObjectStore::CollectionHandle ch, ObjectStore::T
     return store->queue_transaction(ch, std::move(t));
   }
 }
-
+**/
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -59,7 +62,7 @@ int julea_bluestore_mount(void* store) {
 void *julea_bluestore_create_collection(void* store) {
     ObjectStore* ostore = (ObjectStore *)store;
     BSColl* coll = new BSColl;
-    coll->cid = coll_t(spg_t());
+    coll->cid = coll_t();
     coll->ch = ostore->create_new_collection(coll->cid);
     {
         BlueStore::Transaction t;
@@ -72,18 +75,21 @@ void *julea_bluestore_create_collection(void* store) {
 void *julea_bluestore_open_collection(void* store) {
     ObjectStore* ostore = (ObjectStore *)store;
     BSColl* coll = new BSColl;
-    coll->cid = coll_t(spg_t());
+    coll->cid = coll_t();
     coll->ch = ostore->open_collection(coll->cid);
     return (void *)coll;
 }
 
-void julea_bluestore_umount(void* store, void* bscoll) {
+int julea_bluestore_umount(void* store, void* bscoll) {
     ObjectStore* ostore = (ObjectStore *)store;
     BSColl* coll = (BSColl *)bscoll;
+    int ret = 0;
     if (ostore != NULL){
-        ostore->umount();
+        coll->ch.reset();
+        ret = ostore->umount();
     }
     delete coll;
+    return ret;
 }
 
 // File operations
@@ -106,8 +112,7 @@ void julea_bluestore_delete(void* store, void* bscoll, const char* name) {
     ghobject_t obj = make_object(name, pool);
     ObjectStore::Transaction t;
     t.remove(coll->cid, obj);
-    int r = queue_transaction(ostore, coll->ch, std::move(t));
-    ceph_assert(r == 0);
+    ostore->queue_transaction(coll->ch, std::move(t));
 }
 
 int julea_bluestore_write(void* store, void* bscoll, const char* name, uint64_t offset, const char* data, uint64_t length) {
@@ -119,7 +124,7 @@ int julea_bluestore_write(void* store, void* bscoll, const char* name, uint64_t 
     bufferlist bl;
     bl.append(string(data));
     t.write(coll->cid, obj, offset, bl.length(), bl);
-    queue_transaction(ostore, coll->ch, std::move(t));
+    ostore->queue_transaction(coll->ch, std::move(t));
     return bl.length();
 }
 

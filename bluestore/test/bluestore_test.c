@@ -17,7 +17,8 @@ main(int argc, char** argv)
     printf("mkfs returned %d \n", mkrt);
     int mtrt = julea_bluestore_mount(store);
     printf("mount returned %d \n", mtrt);
-    coll = julea_bluestore_create_collection(store);
+    //coll = julea_bluestore_create_collection(store);
+    coll = julea_bluestore_open_collection(store);
 
     julea_bluestore_create(store, coll, "test_object");
     int bw = julea_bluestore_write(store, coll, "test_object", 0, "Test Object Content", 19);
@@ -28,6 +29,7 @@ main(int argc, char** argv)
     printf(readback);
     julea_bluestore_delete(store, coll, "test_object");
 
-    julea_bluestore_umount(store, coll);
-    free(readback);
+    int umtrt = julea_bluestore_umount(store, coll);
+    printf("umount returned %d \n", umtrt);
+    return 0;
 }
