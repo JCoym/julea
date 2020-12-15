@@ -13,12 +13,21 @@ main(int argc, char** argv)
     void* store;
     void* coll;
     store = julea_bluestore_init("/tmp/bluestore-test");
-    int mkrt = julea_bluestore_mkfs(store);
-    printf("mkfs returned %d \n", mkrt);
-    int mtrt = julea_bluestore_mount(store);
-    printf("mount returned %d \n", mtrt);
-    //coll = julea_bluestore_create_collection(store);
-    coll = julea_bluestore_open_collection(store);
+    if (access("/tmp/bluestore-test/mkfs_done", F_OK) == 0)
+    {
+        printf("mkfs skipped \n");
+        int mtrt = julea_bluestore_mount(store);
+        printf("mount returned %d \n", mtrt);
+        coll = julea_bluestore_open_collection(store);
+    }
+    else
+    {
+        int mkrt = julea_bluestore_mkfs(store);
+        printf("mkfs returned %d \n", mkrt);
+        int mtrt = julea_bluestore_mount(store);
+        printf("mount returned %d \n", mtrt);
+        coll = julea_bluestore_create_collection(store);
+    }
 
     julea_bluestore_create(store, coll, "test_object");
     int bw = julea_bluestore_write(store, coll, "test_object", 0, "Test Object Content", 19);
