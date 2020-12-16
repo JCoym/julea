@@ -45,7 +45,7 @@ set_semantics(void)
 }
 
 static gboolean
-deserialize_attribute_data(gconstpointer value, guint32 len, gpointer* data, gsize* data_size)
+deserialize_attribute_data(gconstpointer value, guint32 len, gconstpointer* data, gsize* data_size)
 {
 	bson_t bson[1];
 	bson_iter_t iterator;
@@ -151,7 +151,7 @@ benchmark_hdf_dai_native(BenchmarkRun* run)
 			g_autofree gchar* name = NULL;
 
 			name = g_strdup_printf("benchmark-dai-native-%u.h5", i + (iter * n));
-			file = H5Fcreate(name, H5F_ACC_EXCL, H5P_DEFAULT, j_hdf5_get_fapl());
+			file = H5Fcreate(name, H5F_ACC_EXCL, H5P_DEFAULT, H5P_DEFAULT);
 			group = H5Gcreate2(file, "benchmark-dai-native", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
 			for (guint j = 0; j < n * 10; j++)
@@ -175,7 +175,7 @@ benchmark_hdf_dai_native(BenchmarkRun* run)
 			g_autofree gchar* name = NULL;
 
 			name = g_strdup_printf("benchmark-dai-native-%u.h5", i + (iter * n));
-			file = H5Fopen(name, H5F_ACC_RDWR, j_hdf5_get_fapl());
+			file = H5Fopen(name, H5F_ACC_RDWR, H5P_DEFAULT);
 			group = H5Gopen2(file, "benchmark-dai-native", H5P_DEFAULT);
 
 			for (guint j = 0; j < n * 10; j++)
@@ -221,7 +221,7 @@ benchmark_hdf_dai_get(BenchmarkRun* run)
 			g_autofree gchar* name = NULL;
 
 			name = g_strdup_printf("benchmark-dai-get-%u.h5", i + (iter * n));
-			file = H5Fcreate(name, H5F_ACC_EXCL, H5P_DEFAULT, j_hdf5_get_fapl());
+			file = H5Fcreate(name, H5F_ACC_EXCL, H5P_DEFAULT, H5P_DEFAULT);
 			group = H5Gcreate2(file, "benchmark-dai-get", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
 			for (guint j = 0; j < n * 10; j++)
@@ -250,7 +250,7 @@ benchmark_hdf_dai_get(BenchmarkRun* run)
 				g_autofree gchar* aname = NULL;
 				g_autofree gchar* value = NULL;
 				guint32 len = 0;
-				gpointer adata = NULL;
+				gconstpointer adata = NULL;
 				gsize alen = 0;
 
 				aname = g_strdup_printf("%s/benchmark-dai-get-%u", name, j);
@@ -295,7 +295,7 @@ benchmark_hdf_dai_iterator(BenchmarkRun* run)
 			g_autofree gchar* name = NULL;
 
 			name = g_strdup_printf("benchmark-dai-iterator-%u.h5", i + (iter * n));
-			file = H5Fcreate(name, H5F_ACC_EXCL, H5P_DEFAULT, j_hdf5_get_fapl());
+			file = H5Fcreate(name, H5F_ACC_EXCL, H5P_DEFAULT, H5P_DEFAULT);
 			group = H5Gcreate2(file, "benchmark-dai-iterator", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
 			for (guint j = 0; j < n * 10; j++)
@@ -319,7 +319,7 @@ benchmark_hdf_dai_iterator(BenchmarkRun* run)
 			gchar const* key;
 			gconstpointer value;
 			guint32 len;
-			gpointer adata = NULL;
+			gconstpointer adata = NULL;
 			gsize alen = 0;
 
 			key = j_kv_iterator_get(kv_iterator, &value, &len);
@@ -347,6 +347,13 @@ void
 benchmark_hdf_dai(void)
 {
 #ifdef HAVE_HDF5
+	if (g_getenv("HDF5_VOL_CONNECTOR") == NULL)
+	{
+		// Make sure we do not accidentally run benchmarks for native HDF5
+		// If comparisons with native HDF5 are necessary, set HDF5_VOL_CONNECTOR to "native"
+		return;
+	}
+
 	j_benchmark_add("/hdf5/dai/native", benchmark_hdf_dai_native);
 	j_benchmark_add("/hdf5/dai/get", benchmark_hdf_dai_get);
 	j_benchmark_add("/hdf5/dai/iterator", benchmark_hdf_dai_iterator);
