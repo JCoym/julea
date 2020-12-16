@@ -194,16 +194,16 @@ backend_init(gchar const* path, gpointer* backend_data)
 	bd->store = julea_bluestore_init(path);
 
 	if (access(mkfs_path, F_OK) == 0)
-    {
-        julea_bluestore_mount(bd->store);
-        bd->coll = julea_bluestore_open_collection(bd->store);
-    }
-    else
-    {
-        julea_bluestore_mkfs(bd->store);
-        julea_bluestore_mount(bd->store);
-        bd->coll = julea_bluestore_create_collection(bd->store);
-    }
+	{
+		julea_bluestore_mount(bd->store);
+		bd->coll = julea_bluestore_open_collection(bd->store);
+	}
+	else
+	{
+		julea_bluestore_mkfs(bd->store);
+		julea_bluestore_mount(bd->store);
+		bd->coll = julea_bluestore_create_collection(bd->store);
+	}
 
 	*backend_data = bd;
 
