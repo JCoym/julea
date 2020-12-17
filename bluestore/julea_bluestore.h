@@ -20,9 +20,9 @@ extern "C"
 
 	int julea_bluestore_umount(void*, void*);
 
-	void julea_bluestore_create(void*, void*, const char*);
+	int julea_bluestore_create(void*, void*, const char*);
 
-	void julea_bluestore_delete(void*, void*, const char*);
+	int julea_bluestore_delete(void*, void*, const char*);
 
 	int julea_bluestore_write(void*, void*, const char*, uint64_t, const char*, uint64_t);
 

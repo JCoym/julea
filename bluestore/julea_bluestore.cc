@@ -16,24 +16,12 @@ typedef struct BSColl
     ObjectStore::CollectionHandle ch;
 } BSColl;
 
-
 ghobject_t make_object(const char* name, int64_t pool) {
     sobject_t soid{name, CEPH_NOSNAP};
     uint32_t hash = std::hash<sobject_t>{}(soid);
     return ghobject_t{hobject_t{soid, "", hash, pool, ""}};
 }
-/*
-template <typename T>
-int queue_transaction(T &store, ObjectStore::CollectionHandle ch, ObjectStore::Transaction &&t) {
-  if (rand() % 2) {
-    ObjectStore::Transaction t2;
-    t2.append(t);
-    return store->queue_transaction(ch, std::move(t2));
-  } else {
-    return store->queue_transaction(ch, std::move(t));
-  }
-}
-**/
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -94,25 +82,24 @@ int julea_bluestore_umount(void* store, void* bscoll) {
 
 // File operations
 
-void julea_bluestore_create(void* store, void* bscoll, const char* name) {
+int julea_bluestore_create(void* store, void* bscoll, const char* name) {
     ObjectStore* ostore = (ObjectStore *)store;
     BSColl* coll = (BSColl *)bscoll;
     const uint64_t pool = 4373;
     ghobject_t obj = make_object(name, pool);
     ObjectStore::Transaction t;
     t.touch(coll->cid, obj);
-    int r = ostore->queue_transaction(coll->ch, std::move(t));
-    ceph_assert(r == 0);
+    return ostore->queue_transaction(coll->ch, std::move(t));
 }
 
-void julea_bluestore_delete(void* store, void* bscoll, const char* name) {
+int julea_bluestore_delete(void* store, void* bscoll, const char* name) {
     ObjectStore* ostore = (ObjectStore *)store;
     BSColl* coll = (BSColl *)bscoll;
     const uint64_t pool = 4373;
     ghobject_t obj = make_object(name, pool);
     ObjectStore::Transaction t;
     t.remove(coll->cid, obj);
-    ostore->queue_transaction(coll->ch, std::move(t));
+    return ostore->queue_transaction(coll->ch, std::move(t));
 }
 
 int julea_bluestore_write(void* store, void* bscoll, const char* name, uint64_t offset, const char* data, uint64_t length) {
@@ -136,7 +123,6 @@ int julea_bluestore_read(void* store, void* bscoll, const char* name, uint64_t o
     bufferlist readback;
     int ret = ostore->read(coll->ch, obj, offset, length, readback);
     *data_read = readback.c_str();
-    printf(readback.c_str());
     return ret;
 }
 
