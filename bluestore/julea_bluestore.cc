@@ -109,7 +109,7 @@ int julea_bluestore_write(void* store, void* bscoll, const char* name, uint64_t 
     ghobject_t obj = make_object(name, pool);
     ObjectStore::Transaction t;
     bufferlist bl;
-    bl.append(string(data));
+    bl.append(data, length);
     t.write(coll->cid, obj, offset, bl.length(), bl);
     ostore->queue_transaction(coll->ch, std::move(t));
     return bl.length();
