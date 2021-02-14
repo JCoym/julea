@@ -10,7 +10,7 @@ INCLUDES = -I../dependencies/ceph/src -I../dependencies/ceph/build/include -I../
 # define library paths in addition to /usr/lib
 #   if I wanted to include libraries not in /usr/lib I'd specify
 #   their path using -Lpath, something like:
-LFLAGS = -L../dependencies/ceph/build/lib -L../dependencies/ceph/build/src/rocksdb
+LFLAGS = -L../dependencies/ceph/build/lib -L../dependencies/ceph/build/src/rocksdb  -L../dependencies/ceph/build/src/liburing/src/
 
 # define any libraries to link into executable:
 #   if I want to link in libraries (libx.so or libx.a) I use the -llibname 
