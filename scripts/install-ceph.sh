@@ -11,6 +11,6 @@ git clone --recursive --single-branch https://github.com/ceph/ceph.git "${CEPH_D
 cd "${CEPH_DIR}"
 ./install-deps.sh
 sed -i "s/  add_definitions(-DROCKSDB_MALLOC_USABLE_SIZE)/#  add_definitions(-DROCKSDB_MALLOC_USABLE_SIZE)/g" "${CEPH_DIR}/src/rocksdb/CMakeLists.txt"
-./do_cmake.sh -DWITH_BLUESTORE=ON -DWITH_BLUEFS=ON -DWITH_TESTS=OFF -DWITH_RADOSGW=OFF -DWITH_MGR=OFF
+./do_cmake.sh -DWITH_BLUESTORE=ON -DWITH_BLUEFS=ON -DWITH_TESTS=OFF -DWITH_RADOSGW=OFF -DWITH_MGR=OFF -DWITH_FUSE=OFF
 cd build
 make -j8
